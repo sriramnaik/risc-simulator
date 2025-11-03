@@ -1,0 +1,34 @@
+{
+	"backtrace" : 0,
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : 
+		[
+			"frontend/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			}
+		]
+	},
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 0,
+			"id" : "backend::@e17dcb4e28158375c849"
+		}
+	],
+	"id" : "frontend_autogen_timestamp_deps::@73e8a6b9a3e1c0d3809b",
+	"isGeneratorProvided" : true,
+	"name" : "frontend_autogen_timestamp_deps",
+	"paths" : 
+	{
+		"build" : "frontend",
+		"source" : "frontend"
+	},
+	"sources" : [],
+	"type" : "UTILITY"
+}

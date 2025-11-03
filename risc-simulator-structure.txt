@@ -1,0 +1,104 @@
+risc-simulator/
+        CMakeLists.txt
+        CMakeLists.txt.user
+        main.cpp
+
+        backend/
+            CMakeLists.txt
+            command_handler.cpp
+            command_handler.h
+            config.cpp
+            config.h
+            Doxyfile
+            globals.cpp
+            globals.h
+            mainloop.cpp
+            mainloop.h
+            utils.cpp
+            utils.h
+            vm_asm_mw.cpp
+            vm_asm_mw.h
+            vm_runner.cpp
+            vm_runner.h
+
+            assembler/
+                assembler.cpp
+                assembler.h
+                CMakeLists.txt
+                code_generator.cpp
+                code_generator.h
+                elf_util.cpp
+                elf_util.h
+                errors.cpp
+                errors.h
+                lexer.cpp
+                lexer.h
+                parser.cpp
+                parser.h
+                tokens.cpp
+                tokens.h
+
+                parse_formats/
+                    CMakeLists.txt
+                    csr_formats.cpp
+                    f_d_formats.cpp
+                    i_m_formats.cpp
+                    pseudo_formats.cpp
+
+            common/
+                CMakeLists.txt
+                instructions.cpp
+                instructions.h
+                rounding_modes.h
+
+            vm/
+                alu.cpp
+                alu.h
+                CMakeLists.txt
+                control_unit_base.cpp
+                control_unit_base.h
+                main_memory.cpp
+                main_memory.h
+                memory_controller.cpp
+                memory_controller.h
+                mmio_devices.h
+                registers.cpp
+                registers.h
+                rvss_control_unit.cpp
+                rvss_control_unit.h
+                rvss_vm.cpp
+                rvss_vm.h
+                vm_base.cpp
+                vm_base.h
+
+                cache/
+                    cache.cpp
+                    cache.h
+                    CMakeLists.txt
+
+                rv5s/
+                    CMakeLists.txt
+                    rv5s_control_unit.cpp
+                    rv5s_control_unit.h
+                    rv5s_vm.cpp
+                    rv5s_vm.h
+
+	    frontend/
+    		BottomPanel.cpp
+    		BottomPanel.h
+    		CMakeLists.txt
+    		codeeditor.cpp
+            codeeditor.h
+            controlstatustable.cpp
+            controlstatustable.h
+            datasegment.cpp
+            datasegment.h
+            errorconsole.cpp
+            errorconsole.h
+            mainwindow.cpp
+            mainwindow.h
+            mainwindow.ui
+            registerpanel.cpp
+            registerpanel.h
+            RegisterTable.cpp
+            RegisterTable.h

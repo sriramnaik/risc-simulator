@@ -1,0 +1,38 @@
+{
+	"backtrace" : 0,
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : 
+		[
+			"backend/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			}
+		]
+	},
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 0,
+			"id" : "common::@4c03eb57ffbf84fd4e8c"
+		},
+		{
+			"backtrace" : 0,
+			"id" : "vm::@4c5a557b7f67c47c6f6e"
+		}
+	],
+	"id" : "backend_autogen_timestamp_deps::@e17dcb4e28158375c849",
+	"isGeneratorProvided" : true,
+	"name" : "backend_autogen_timestamp_deps",
+	"paths" : 
+	{
+		"build" : "backend",
+		"source" : "backend"
+	},
+	"sources" : [],
+	"type" : "UTILITY"
+}

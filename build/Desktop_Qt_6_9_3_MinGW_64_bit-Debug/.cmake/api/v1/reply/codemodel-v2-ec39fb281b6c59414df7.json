@@ -1,0 +1,346 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						6
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-37c197f07bc4d2f8774b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						12,
+						13,
+						14
+					]
+				},
+				{
+					"build" : "backend",
+					"childIndexes" : 
+					[
+						2,
+						3
+					],
+					"jsonFile" : "directory-backend-Debug-1757027d88c457ad9760.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "backend",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				},
+				{
+					"build" : "backend/common",
+					"jsonFile" : "directory-backend.common-Debug-ab917e6a4a527b1941ff.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "backend/common",
+					"targetIndexes" : 
+					[
+						6,
+						7,
+						8
+					]
+				},
+				{
+					"build" : "backend/vm",
+					"childIndexes" : 
+					[
+						4,
+						5
+					],
+					"jsonFile" : "directory-backend.vm-Debug-e7082cf2b1277f48b27d.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "backend/vm",
+					"targetIndexes" : 
+					[
+						18,
+						19,
+						20
+					]
+				},
+				{
+					"build" : "backend/vm/cache",
+					"jsonFile" : "directory-backend.vm.cache-Debug-b39dbccc5e6b85243645.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 3,
+					"projectIndex" : 0,
+					"source" : "backend/vm/cache",
+					"targetIndexes" : 
+					[
+						3,
+						4,
+						5
+					]
+				},
+				{
+					"build" : "backend/vm/rv5s",
+					"jsonFile" : "directory-backend.vm.rv5s-Debug-b3f1353764ead8f69314.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 3,
+					"projectIndex" : 0,
+					"source" : "backend/vm/rv5s",
+					"targetIndexes" : 
+					[
+						15,
+						16,
+						17
+					]
+				},
+				{
+					"build" : "frontend",
+					"jsonFile" : "directory-frontend-Debug-2ec6fca2583b1affd23c.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "frontend",
+					"targetIndexes" : 
+					[
+						9,
+						10,
+						11
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6
+					],
+					"name" : "risc-simulator",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18,
+						19,
+						20
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 1,
+					"id" : "backend::@e17dcb4e28158375c849",
+					"jsonFile" : "target-backend-Debug-b46f18fd0de02211de0c.json",
+					"name" : "backend",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "backend_autogen::@e17dcb4e28158375c849",
+					"jsonFile" : "target-backend_autogen-Debug-e535e853b82ff9909e92.json",
+					"name" : "backend_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "backend_autogen_timestamp_deps::@e17dcb4e28158375c849",
+					"jsonFile" : "target-backend_autogen_timestamp_deps-Debug-cadbe7a579f012f2f586.json",
+					"name" : "backend_autogen_timestamp_deps",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "cache::@6d9aeff6f580d6016955",
+					"jsonFile" : "target-cache-Debug-403385b5890c328c6af6.json",
+					"name" : "cache",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "cache_autogen::@6d9aeff6f580d6016955",
+					"jsonFile" : "target-cache_autogen-Debug-fb2792b0a35ae1f550c1.json",
+					"name" : "cache_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "cache_autogen_timestamp_deps::@6d9aeff6f580d6016955",
+					"jsonFile" : "target-cache_autogen_timestamp_deps-Debug-87f0acf09c9c7083235a.json",
+					"name" : "cache_autogen_timestamp_deps",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "common::@4c03eb57ffbf84fd4e8c",
+					"jsonFile" : "target-common-Debug-03dcae76d9cfb046ecbb.json",
+					"name" : "common",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "common_autogen::@4c03eb57ffbf84fd4e8c",
+					"jsonFile" : "target-common_autogen-Debug-e40e408ec91bc2a75edc.json",
+					"name" : "common_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "common_autogen_timestamp_deps::@4c03eb57ffbf84fd4e8c",
+					"jsonFile" : "target-common_autogen_timestamp_deps-Debug-b55f0ccf0ff9008c0578.json",
+					"name" : "common_autogen_timestamp_deps",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 6,
+					"id" : "frontend::@73e8a6b9a3e1c0d3809b",
+					"jsonFile" : "target-frontend-Debug-8d92d04fa1f3f202d652.json",
+					"name" : "frontend",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 6,
+					"id" : "frontend_autogen::@73e8a6b9a3e1c0d3809b",
+					"jsonFile" : "target-frontend_autogen-Debug-5914e20d90ba094c23ed.json",
+					"name" : "frontend_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 6,
+					"id" : "frontend_autogen_timestamp_deps::@73e8a6b9a3e1c0d3809b",
+					"jsonFile" : "target-frontend_autogen_timestamp_deps-Debug-adde23ebbed814f38719.json",
+					"name" : "frontend_autogen_timestamp_deps",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "risc-simulator::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-risc-simulator-Debug-715017db6b0a2b6466db.json",
+					"name" : "risc-simulator",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "risc-simulator_autogen::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-risc-simulator_autogen-Debug-1e6c5684566d022f5457.json",
+					"name" : "risc-simulator_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "risc-simulator_autogen_timestamp_deps::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-risc-simulator_autogen_timestamp_deps-Debug-414d94361f55b7ead4d8.json",
+					"name" : "risc-simulator_autogen_timestamp_deps",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "rv5s::@8c4e4b17e39757bca6de",
+					"jsonFile" : "target-rv5s-Debug-b304010fb9ca2871113d.json",
+					"name" : "rv5s",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "rv5s_autogen::@8c4e4b17e39757bca6de",
+					"jsonFile" : "target-rv5s_autogen-Debug-32c44da30b98efa7238f.json",
+					"name" : "rv5s_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "rv5s_autogen_timestamp_deps::@8c4e4b17e39757bca6de",
+					"jsonFile" : "target-rv5s_autogen_timestamp_deps-Debug-161e4485c45d70ea94ef.json",
+					"name" : "rv5s_autogen_timestamp_deps",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "vm::@4c5a557b7f67c47c6f6e",
+					"jsonFile" : "target-vm-Debug-7dd1bd5c995c7b456ff0.json",
+					"name" : "vm",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "vm_autogen::@4c5a557b7f67c47c6f6e",
+					"jsonFile" : "target-vm_autogen-Debug-0c2053706687cc144399.json",
+					"name" : "vm_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "vm_autogen_timestamp_deps::@4c5a557b7f67c47c6f6e",
+					"jsonFile" : "target-vm_autogen_timestamp_deps-Debug-c1c5633b1f790a5deb0e.json",
+					"name" : "vm_autogen_timestamp_deps",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug",
+		"source" : "C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}

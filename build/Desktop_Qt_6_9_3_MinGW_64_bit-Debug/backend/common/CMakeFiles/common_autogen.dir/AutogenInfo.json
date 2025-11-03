@@ -1,0 +1,114 @@
+{
+	"AUTOGEN_COMMAND_LINE_LENGTH_MAX" : 32000,
+	"BUILD_DIR" : "C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/common/common_autogen",
+	"CMAKE_BINARY_DIR" : "C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug",
+	"CMAKE_CURRENT_BINARY_DIR" : "C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/common",
+	"CMAKE_CURRENT_SOURCE_DIR" : "C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/backend/common",
+	"CMAKE_EXECUTABLE" : "C:/Qt/Tools/CMake_64/bin/cmake.exe",
+	"CMAKE_LIST_FILES" : 
+	[
+		"C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/backend/common/CMakeLists.txt"
+	],
+	"CMAKE_SOURCE_DIR" : "C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator",
+	"CROSS_CONFIG" : false,
+	"DEP_FILE" : "C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/common/common_autogen/deps",
+	"DEP_FILE_RULE_NAME" : "common_autogen/timestamp",
+	"HEADERS" : 
+	[
+		[
+			"C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/backend/common/instructions.h",
+			"MU",
+			"EWIEGA46WW/moc_instructions.cpp",
+			null
+		],
+		[
+			"C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/backend/common/rounding_modes.h",
+			"MU",
+			"EWIEGA46WW/moc_rounding_modes.cpp",
+			null
+		]
+	],
+	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
+	"INCLUDE_DIR" : "C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/common/common_autogen/include",
+	"MOC_COMPILATION_FILE" : "C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/common/common_autogen/mocs_compilation.cpp",
+	"MOC_DEFINITIONS" : 
+	[
+		"MINGW_HAS_SECURE_API=1",
+		"QT_CORE_LIB",
+		"QT_GUI_LIB",
+		"QT_WIDGETS_LIB",
+		"UNICODE",
+		"WIN32",
+		"WIN64",
+		"_ENABLE_EXTENDED_ALIGNED_STORAGE",
+		"_UNICODE",
+		"_WIN64"
+	],
+	"MOC_DEPEND_FILTERS" : 
+	[
+		[
+			"Q_PLUGIN_METADATA",
+			"[\n][ \t]*Q_PLUGIN_METADATA[ \t]*\\([^\\)]*FILE[ \t]*\"([^\"]+)\""
+		]
+	],
+	"MOC_INCLUDES" : 
+	[
+		"C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/backend/common",
+		"C:/Qt/6.9.3/mingw_64/include/QtWidgets",
+		"C:/Qt/6.9.3/mingw_64/include",
+		"C:/Qt/6.9.3/mingw_64/include/QtCore",
+		"C:/Qt/6.9.3/mingw_64/mkspecs/win32-g++",
+		"C:/Qt/6.9.3/mingw_64/include/QtGui",
+		"C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++",
+		"C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/x86_64-w64-mingw32",
+		"C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/backward",
+		"C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include",
+		"C:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include-fixed",
+		"C:/Qt/Tools/mingw1310_64/x86_64-w64-mingw32/include"
+	],
+	"MOC_MACRO_NAMES" : 
+	[
+		"Q_OBJECT",
+		"Q_GADGET",
+		"Q_NAMESPACE",
+		"Q_NAMESPACE_EXPORT",
+		"Q_GADGET_EXPORT",
+		"Q_ENUM_NS"
+	],
+	"MOC_OPTIONS" : [],
+	"MOC_PATH_PREFIX" : false,
+	"MOC_PREDEFS_CMD" : 
+	[
+		"C:/Qt/Tools/mingw1310_64/bin/g++.exe",
+		"-std=gnu++17",
+		"-dM",
+		"-E",
+		"-c",
+		"C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp"
+	],
+	"MOC_PREDEFS_FILE" : "C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/common/common_autogen/moc_predefs.h",
+	"MOC_RELAXED_MODE" : false,
+	"MOC_SKIP" : [],
+	"MULTI_CONFIG" : false,
+	"PARALLEL" : 12,
+	"PARSE_CACHE_FILE" : "C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/common/CMakeFiles/common_autogen.dir/ParseCache.txt",
+	"QT_MOC_EXECUTABLE" : "C:/Qt/6.9.3/mingw_64/bin/moc.exe",
+	"QT_UIC_EXECUTABLE" : "C:/Qt/6.9.3/mingw_64/bin/uic.exe",
+	"QT_VERSION_MAJOR" : 6,
+	"QT_VERSION_MINOR" : 9,
+	"SETTINGS_FILE" : "C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/common/CMakeFiles/common_autogen.dir/AutogenUsed.txt",
+	"SOURCES" : 
+	[
+		[
+			"C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/backend/common/instructions.cpp",
+			"MU",
+			null
+		]
+	],
+	"UIC_OPTIONS" : [],
+	"UIC_SEARCH_PATHS" : [],
+	"UIC_SKIP" : [],
+	"UIC_UI_FILES" : [],
+	"USE_BETTER_GRAPH" : true,
+	"VERBOSITY" : 0
+}

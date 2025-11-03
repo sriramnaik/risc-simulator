@@ -1,0 +1,34 @@
+# ninja log v6
+34	500	7827775116178492	risc-simulator_autogen/timestamp	c2943bd920f74b4a
+34	500	7827775116178492	risc-simulator_autogen/mocs_compilation.cpp	c2943bd920f74b4a
+34	500	7827775116178492	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_10_0_MinGW_64_bit-Debug/risc-simulator_autogen/mocs_compilation.cpp	c2943bd920f74b4a
+4421	5460	7827775159924343	risc-simulator.exe	96657b38a9bf6795
+34	500	7827775116178492	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_10_0_MinGW_64_bit-Debug/risc-simulator_autogen/timestamp	c2943bd920f74b4a
+1794	5443	7827766733016801	CMakeFiles/risc-simulator.dir/risc-simulator_autogen/mocs_compilation.cpp.obj	295315b77acec6c5
+10	66	7827724805532567	CMakeFiles/clean.additional	baedbe210acaa455
+1395	5843	7827724821583846	CMakeFiles/risc-simulator.dir/main.cpp.obj	eb162d225d516cbe
+506	4421	7827775120847997	CMakeFiles/risc-simulator.dir/mainwindow.cpp.obj	69faf1a18a2fba9b
+1448	6079	7827724822119681	CMakeFiles/risc-simulator.dir/codeeditor.cpp.obj	6712f618107ecf8
+974	3034	7827464569561676	CMakeFiles/risc-simulator.dir/codeEditor.cpp.obj	8b5ff9c26c17c83
+66	105	7827724806027076	clean	577b940aee94fbd7
+9	900	7827693303142279	build.ninja	499e612b7e1e0810
+364	2723	7827495467146424	CMakeFiles/risc-simulator.dir/table.cpp.obj	5571c2577a08ec22
+367	3644	7827772604238212	CMakeFiles/risc-simulator.dir/RegisterTable.cpp.obj	dffe560d18790fc3
+433	3822	7827768056243659	CMakeFiles/risc-simulator.dir/registerpanel.cpp.obj	ed8269ac0833fcf
+1536	5903	7827724823044784	CMakeFiles/risc-simulator.dir/controlstatustable.cpp.obj	3ad38f9fc861fa9
+1556	5386	7827724823187283	CMakeFiles/risc-simulator.dir/errorconsole.cpp.obj	5bd625ef13f16bac
+1014	2932	7827692137977054	CMakeFiles/risc-simulator.dir/BottomPanel.cpp.obj	706ea236d2600b04
+1600	5308	7827724823684517	CMakeFiles/risc-simulator.dir/datasegment.cpp.obj	44a9de27b7418947
+1577	5270	7827724823472544	CMakeFiles/risc-simulator.dir/bottompanel.cpp.obj	15267d8a9cf325fd
+23	345	7827776351144010	risc-simulator_autogen/timestamp	c2943bd920f74b4a
+23	345	7827776351144010	risc-simulator_autogen/mocs_compilation.cpp	c2943bd920f74b4a
+23	345	7827776351144010	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_10_0_MinGW_64_bit-Debug/risc-simulator_autogen/timestamp	c2943bd920f74b4a
+23	345	7827776351144010	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_10_0_MinGW_64_bit-Debug/risc-simulator_autogen/mocs_compilation.cpp	c2943bd920f74b4a
+347	3749	7827776354490762	CMakeFiles/risc-simulator.dir/mainwindow.cpp.obj	69faf1a18a2fba9b
+3749	4732	7827776388470676	risc-simulator.exe	96657b38a9bf6795
+21	329	7827776867180205	risc-simulator_autogen/timestamp	c2943bd920f74b4a
+21	329	7827776867180205	risc-simulator_autogen/mocs_compilation.cpp	c2943bd920f74b4a
+21	329	7827776867180205	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_10_0_MinGW_64_bit-Debug/risc-simulator_autogen/timestamp	c2943bd920f74b4a
+21	329	7827776867180205	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_10_0_MinGW_64_bit-Debug/risc-simulator_autogen/mocs_compilation.cpp	c2943bd920f74b4a
+331	3736	7827776870236518	CMakeFiles/risc-simulator.dir/mainwindow.cpp.obj	69faf1a18a2fba9b
+3737	4761	7827776904197584	risc-simulator.exe	96657b38a9bf6795

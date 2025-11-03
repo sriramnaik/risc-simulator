@@ -1,0 +1,179 @@
+# ninja log v6
+263	511	7829150637244255	risc-simulator_autogen/timestamp	a46182df00251b9c
+64	95	7829032102581132	clean	577b940aee94fbd7
+263	511	7829150637244255	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/risc-simulator_autogen/mocs_compilation.cpp	a46182df00251b9c
+845	1911	7828579456630638	backend/assembler/CMakeFiles/assembly.dir/tokens.cpp.obj	7074a290c7e64ddc
+263	511	7829150637244255	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/risc-simulator_autogen/timestamp	a46182df00251b9c
+263	511	7829150637244255	risc-simulator_autogen/mocs_compilation.cpp	a46182df00251b9c
+80	581	7829032107965119	backend/vm/cache/cache_autogen/mocs_compilation.cpp	c40099d919eb4179
+14330	29359	7838677651896455	risc-simulator.exe	99789d52cdbe8171
+43	2198	7838648148427450	frontend/frontend_autogen/timestamp	c6a54bb11a2a31e6
+43	2198	7838648148427450	frontend/frontend_autogen/mocs_compilation.cpp	c6a54bb11a2a31e6
+941	2809	7829451963540903	backend/CMakeFiles/backend.dir/config.cpp.obj	1db0b03c2a10018f
+265	3165	7829124207301548	backend/assembler/CMakeFiles/assembler.dir/assembler.cpp.obj	7586ec7a259e60d3
+8581	13408	7833823101538407	backend/CMakeFiles/backend.dir/backend_autogen/mocs_compilation.cpp.obj	a31ca113594867ca
+43	2198	7838648148427450	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/frontend/frontend_autogen/timestamp	c6a54bb11a2a31e6
+38	384	7829032107402042	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/assembler/parse_formats/parser_format_autogen/timestamp	9e79cec657c2ca59
+43	2198	7838648148427450	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/frontend/frontend_autogen/mocs_compilation.cpp	c6a54bb11a2a31e6
+8501	10828	7830036540826909	frontend/CMakeFiles/frontend.dir/errorconsole.cpp.obj	bf99e0b922e06e21
+79	378	7838701174955482	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/vm/vm_autogen/timestamp	d3a16585d710fe4c
+7196	8575	7833823099996635	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/backend_autogen/mocs_compilation.cpp	684b8b1fe4dff987
+2986	7351	7829038465698543	frontend/CMakeFiles/frontend.dir/controlstatustable.cpp.obj	bbfb33b0e0ca505b
+8869	13298	7833823104388588	backend/CMakeFiles/backend.dir/assembler/parse_formats/csr_formats.cpp.obj	fc1288610adab722
+39	378	7829034970241308	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/vm/rvss/rvss_autogen/timestamp	784d03c9997cdc4d
+1472	5098	7831133678847521	frontend/CMakeFiles/frontend.dir/BottomPanel.cpp.obj	9c8ef06f9f1ec9b9
+79	378	7838701174955482	backend/vm/vm_autogen/mocs_compilation.cpp	d3a16585d710fe4c
+5073	8513	7833840600943834	frontend/CMakeFiles/frontend.dir/registerpanel.cpp.obj	e802661e785316e2
+55	3781	7829007909699268	backend/assembler/libassembly.a	be66a252ce485f0a
+1524	5478	7831133679366707	frontend/CMakeFiles/frontend.dir/datasegment.cpp.obj	eaa4fd050dd65cf2
+2232	11065	7838648151021985	frontend/CMakeFiles/frontend.dir/codeeditor.cpp.obj	645428ed6401f13b
+79	378	7838701174955482	backend/vm/vm_autogen/timestamp	d3a16585d710fe4c
+2206	14449	7838648150771878	frontend/CMakeFiles/frontend.dir/frontend_autogen/mocs_compilation.cpp.obj	cdd61112d04580e1
+13	63	7829032102027470	CMakeFiles/clean.additional	baedbe210acaa455
+523	4156	7836817122986835	frontend/CMakeFiles/frontend.dir/RegisterTable.cpp.obj	4874f8236924128a
+8357	11105	7833727763932458	CMakeFiles/risc-simulator.dir/main.cpp.obj	bde34a063f617853
+57	219	7829006430715657	backend/assembler/assembly_autogen/timestamp	a4cfc9ec7c4b6f13
+4746	10816	7838699942478542	frontend/CMakeFiles/frontend.dir/mainwindow.cpp.obj	3066b8af93695f9b
+56	526	7829032107899225	backend/common/common_autogen/mocs_compilation.cpp	bdaba6b32759d317
+10816	12593	7838700003173458	frontend/libfrontend.a	a034edbbdb35cb2a
+10206	10339	7829038537837765	CMakeFiles/risc-simulator.dir/risc-simulator_autogen/mocs_compilation.cpp.obj	5ed9abc343cf6f47
+104	626	7829032108291385	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/vm/rv5s/rv5s_autogen/mocs_compilation.cpp	e0e891a3ed0d2d65
+38	384	7829032107402042	backend/assembler/parse_formats/parser_format_autogen/mocs_compilation.cpp	9e79cec657c2ca59
+7196	8575	7833823099996635	backend/backend_autogen/timestamp	684b8b1fe4dff987
+3166	7674	7829124236318551	backend/assembler/libassembler.a	b05e12e1e6d98289
+14	1149	7838701467541704	build.ninja	d73232601e168923
+380	547	7829034973653068	backend/vm/rvss/CMakeFiles/rvss.dir/rvss_autogen/mocs_compilation.cpp.obj	60ab580efa05e731
+7196	8575	7833823099996635	backend/backend_autogen/mocs_compilation.cpp	684b8b1fe4dff987
+104	626	7829032108291385	backend/vm/rv5s/rv5s_autogen/mocs_compilation.cpp	e0e891a3ed0d2d65
+7196	8575	7833823099996635	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/backend_autogen/timestamp	684b8b1fe4dff987
+104	626	7829032108291385	backend/vm/rv5s/rv5s_autogen/timestamp	e0e891a3ed0d2d65
+936	3826	7838699904376480	backend/vm/CMakeFiles/vm.dir/vm_base.cpp.obj	27f5f6faf5488420
+57	219	7829006430715657	backend/assembler/assembly_autogen/mocs_compilation.cpp	a4cfc9ec7c4b6f13
+57	219	7829006430715657	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/assembler/assembly_autogen/timestamp	a4cfc9ec7c4b6f13
+57	219	7829006430715657	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/assembler/assembly_autogen/mocs_compilation.cpp	a4cfc9ec7c4b6f13
+56	526	7829032107899225	backend/common/common_autogen/timestamp	bdaba6b32759d317
+15385	22804	7833823169552444	backend/libbackend.a	818ae0ff286686cd
+38	384	7829032107402042	backend/assembler/parse_formats/parser_format_autogen/timestamp	9e79cec657c2ca59
+38	384	7829032107402042	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/assembler/parse_formats/parser_format_autogen/mocs_compilation.cpp	9e79cec657c2ca59
+56	526	7829032107899225	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/common/common_autogen/timestamp	bdaba6b32759d317
+56	526	7829032107899225	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/common/common_autogen/mocs_compilation.cpp	bdaba6b32759d317
+79	378	7838701174955482	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/vm/vm_autogen/mocs_compilation.cpp	d3a16585d710fe4c
+7494	9598	7830298960248228	backend/CMakeFiles/backend.dir/vm_asm_mw.cpp.obj	1695ba099d1f6bde
+877	1049	7829032112985275	backend/vm/rv5s/librv5s.a	1b533b3919c638b
+80	581	7829032107965119	backend/vm/cache/cache_autogen/timestamp	c40099d919eb4179
+80	581	7829032107965119	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/vm/cache/cache_autogen/timestamp	c40099d919eb4179
+80	581	7829032107965119	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/vm/cache/cache_autogen/mocs_compilation.cpp	c40099d919eb4179
+39	378	7829034970241308	backend/vm/rvss/rvss_autogen/timestamp	784d03c9997cdc4d
+39	378	7829034970241308	backend/vm/rvss/rvss_autogen/mocs_compilation.cpp	784d03c9997cdc4d
+39	378	7829034970241308	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/vm/rvss/rvss_autogen/mocs_compilation.cpp	784d03c9997cdc4d
+588	929	7828579454067144	backend/assembler/CMakeFiles/assembly.dir/assembly_autogen/mocs_compilation.cpp.obj	99e874e5f93aec90
+386	837	7829032108110401	backend/assembler/parse_formats/CMakeFiles/parser_format.dir/parser_format_autogen/mocs_compilation.cpp.obj	ae43cdfd69c1978c
+104	626	7829032108291385	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/vm/rv5s/rv5s_autogen/timestamp	e0e891a3ed0d2d65
+694	2080	7828579455133382	backend/assembler/CMakeFiles/assembly.dir/errors.cpp.obj	8720f5b76b50353c
+981	2862	7829451963951344	backend/CMakeFiles/backend.dir/globals.cpp.obj	746e01720ffa0a02
+659	2448	7828579454781985	backend/assembler/CMakeFiles/assembly.dir/elf_util.cpp.obj	e60c002aa532ad2d
+3226	3805	7829035002110541	backend/vm/rvss/librvss.a	fc5504e564bdff02
+636	3358	7828579454548627	backend/assembler/CMakeFiles/assembly.dir/code_generator.cpp.obj	176e52c60e3d5f26
+8672	12724	7833823102376504	backend/CMakeFiles/backend.dir/utils.cpp.obj	b7d81954d251e2c2
+5265	5465	7829032156772588	backend/assembler/CMakeFiles/assembler.dir/assembler_autogen/mocs_compilation.cpp.obj	a656744183972fd
+542	2923	7829016830101523	backend/CMakeFiles/backend.dir/main.cpp.obj	290cdc69984dca5b
+199	4944	7828583014178163	backend/assembler/CMakeFiles/assembly.dir/lexer.cpp.obj	c13bbdab751e0dd9
+528	838	7829032109540658	backend/common/CMakeFiles/common.dir/common_autogen/mocs_compilation.cpp.obj	8c76d848c3140127
+582	838	7829032110048933	backend/vm/cache/CMakeFiles/cache.dir/cache_autogen/mocs_compilation.cpp.obj	9b05bfa3390ffa8b
+627	839	7829032110531948	backend/vm/rv5s/CMakeFiles/rv5s.dir/rv5s_autogen/mocs_compilation.cpp.obj	bfb85d4070a0a160
+665	840	7829032110918642	backend/vm/rv5s/CMakeFiles/rv5s.dir/rv5s_control_unit.cpp.obj	517705ec8d6aa31e
+931	4027	7838699904326479	backend/vm/CMakeFiles/vm.dir/vm_autogen/mocs_compilation.cpp.obj	2ea225c33d9359c7
+8623	14021	7833823101949437	backend/CMakeFiles/backend.dir/command_handler.cpp.obj	bdccb9ed8720238f
+689	877	7829032111056554	backend/vm/rv5s/CMakeFiles/rv5s.dir/rv5s_vm.cpp.obj	645a6c66b2829085
+603	1098	7829032110265351	backend/vm/cache/CMakeFiles/cache.dir/cache.cpp.obj	d0bcbda5bb43ded0
+1098	1284	7829032115243140	backend/vm/cache/libcache.a	b16b463c4acc4138
+423	1534	7829037915852769	backend/vm/CMakeFiles/vm.dir/alu.cpp.obj	68a06cbe675b994b
+554	5940	7829032109793862	backend/common/CMakeFiles/common.dir/instructions.cpp.obj	d2160e01ca15d28f
+480	2235	7829037916438893	backend/vm/CMakeFiles/vm.dir/main_memory.cpp.obj	d16859e7f4814f6a
+5941	9173	7829032163668891	backend/common/libcommon.a	3ee2bff869361ca4
+504	1876	7829037916660525	backend/vm/CMakeFiles/vm.dir/memory_controller.cpp.obj	5131bcc154f74132
+1053	2398	7833823026223840	backend/vm/CMakeFiles/vm.dir/control_unit_base.cpp.obj	13f0ce5cc1ad56b0
+329	1809	7833840553470352	backend/vm/CMakeFiles/vm.dir/registers.cpp.obj	7fbab27ef0b9af52
+1106	1587	7829451965193023	backend/CMakeFiles/backend.dir/vm_runner.cpp.obj	ea087d415383d70b
+49	2815	7829122741190849	backend/assembler/parse_formats/CMakeFiles/parser_format.dir/csr_formats.cpp.obj	300217f670fea5b8
+133	2890	7829122742045926	backend/assembler/parse_formats/CMakeFiles/parser_format.dir/pseudo_formats.cpp.obj	47dff68b9ff9fe4e
+105	3105	7829122741778177	backend/assembler/parse_formats/CMakeFiles/parser_format.dir/i_m_formats.cpp.obj	24d710e49c2e332a
+76	3080	7829122741479491	backend/assembler/parse_formats/CMakeFiles/parser_format.dir/f_d_formats.cpp.obj	fcc383a03c3c12bd
+224	4165	7828583014418496	backend/assembler/CMakeFiles/assembly.dir/parser.cpp.obj	b900078e35241eda
+5443	6249	7829032158682913	backend/assembler/CMakeFiles/assembler.dir/tokens.cpp.obj	b4a4dcd6b13e1f15
+3121	4032	7838700213910237	backend/vm/libvm.a	83053ac63510f0f6
+3105	4534	7829122771700083	backend/assembler/parse_formats/libparser_format.a	109046754505a487
+220	2715	7829006432362131	backend/assembler/CMakeFiles/assembly.dir/assembler.cpp.obj	6f12567ad23bfd5f
+4075	5909	7829543557165938	backend/CMakeFiles/backend.dir/assembler/errors.cpp.obj	ce2c3e05c243f4c4
+402	1610	7829034973873071	backend/vm/rvss/CMakeFiles/rvss.dir/rvss_control_unit.cpp.obj	e92b4d9b791508aa
+425	3225	7829034974103173	backend/vm/rvss/CMakeFiles/rvss.dir/rvss_vm.cpp.obj	2e54f6fbcd5667ff
+1010	1546	7829451964242853	backend/CMakeFiles/backend.dir/mainloop.cpp.obj	67a090bce4eb4e6c
+25	167	7829161115898712	backend/assembler/assembler_autogen/timestamp	52eb300cb49cb836
+25	167	7829161115898712	backend/assembler/assembler_autogen/mocs_compilation.cpp	52eb300cb49cb836
+25	167	7829161115898712	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/assembler/assembler_autogen/timestamp	52eb300cb49cb836
+25	167	7829161115898712	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/assembler/assembler_autogen/mocs_compilation.cpp	52eb300cb49cb836
+5360	6323	7829032157854065	backend/assembler/CMakeFiles/assembler.dir/errors.cpp.obj	e004bd24ee32b6e4
+4562	5555	7829122786318528	backend/assembler/CMakeFiles/assembler.dir/elf_util.cpp.obj	247ae72a4d07bb6e
+5306	7471	7829032157319665	backend/assembler/CMakeFiles/assembler.dir/code_generator.cpp.obj	3bc4d19f485b4cff
+348	3120	7838700186189762	backend/vm/CMakeFiles/vm.dir/rvss_vm_pipelined.cpp.obj	7259123ec844aa16
+4589	7763	7829122786591016	backend/assembler/CMakeFiles/assembler.dir/parser.cpp.obj	b867ab7d32328a3c
+5394	9682	7829032158191646	backend/assembler/CMakeFiles/assembler.dir/lexer.cpp.obj	382f28e3f464fee2
+1209	2609	7833823027789751	backend/vm/CMakeFiles/vm.dir/rvss_control_unit.cpp.obj	25a0603cbb7408c0
+924	3958	7835205333874066	backend/vm/CMakeFiles/vm.dir/rvss_vm.cpp.obj	f7d391c092a0f009
+1397	2821	7829451968104943	backend/CMakeFiles/backend.dir/assembler/tokens.cpp.obj	f820baff54857c1b
+7561	9924	7830298960820403	backend/CMakeFiles/backend.dir/assembler/elf_util.cpp.obj	87c26486760dd1ac
+1183	4450	7829451965966382	backend/CMakeFiles/backend.dir/assembler/code_generator.cpp.obj	4746a7749adcdf6e
+8729	14973	7833823103016621	backend/CMakeFiles/backend.dir/assembler/assembler.cpp.obj	a62e7cf61a3d4699
+9002	13615	7833823105749970	backend/CMakeFiles/backend.dir/assembler/parse_formats/pseudo_formats.cpp.obj	22a0937669cd6690
+8955	13777	7833823105282858	backend/CMakeFiles/backend.dir/assembler/parse_formats/i_m_formats.cpp.obj	8b3711316bc21bc8
+8913	13982	7833823104857340	backend/CMakeFiles/backend.dir/assembler/parse_formats/f_d_formats.cpp.obj	e3807662af085f53
+8821	14377	7833823103926745	backend/CMakeFiles/backend.dir/assembler/parser.cpp.obj	85530544c74696ee
+8778	15383	7833823103521158	backend/CMakeFiles/backend.dir/assembler/lexer.cpp.obj	fce2ce80eb8f23fb
+418	3058	7835208885402477	frontend/CMakeFiles/frontend.dir/processorwindow.cpp.obj	cdedb949d4b9c5c7
+72	350	7838701479347018	backend/vm/vm_autogen/timestamp	d3a16585d710fe4c
+72	350	7838701479347018	backend/vm/vm_autogen/mocs_compilation.cpp	d3a16585d710fe4c
+72	350	7838701479347018	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/vm/vm_autogen/timestamp	d3a16585d710fe4c
+72	350	7838701479347018	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/vm/vm_autogen/mocs_compilation.cpp	d3a16585d710fe4c
+84	1286	7838702227173207	backend/vm/vm_autogen/timestamp	d3a16585d710fe4c
+84	1286	7838702227173207	backend/vm/vm_autogen/mocs_compilation.cpp	d3a16585d710fe4c
+84	1286	7838702227173207	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/vm/vm_autogen/timestamp	d3a16585d710fe4c
+84	1286	7838702227173207	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/vm/vm_autogen/mocs_compilation.cpp	d3a16585d710fe4c
+1304	4690	7838702228550607	backend/vm/CMakeFiles/vm.dir/rvss_vm_pipelined.cpp.obj	7259123ec844aa16
+1297	4720	7838702228475388	backend/vm/CMakeFiles/vm.dir/vm_base.cpp.obj	27f5f6faf5488420
+1288	5016	7838702228385403	backend/vm/CMakeFiles/vm.dir/vm_autogen/mocs_compilation.cpp.obj	2ea225c33d9359c7
+5016	5905	7838702265670102	backend/vm/libvm.a	83053ac63510f0f6
+5905	12931	7838702274554983	frontend/CMakeFiles/frontend.dir/mainwindow.cpp.obj	3066b8af93695f9b
+12931	15280	7838702344818515	frontend/libfrontend.a	a034edbbdb35cb2a
+67	278	7838702657720060	backend/vm/vm_autogen/timestamp	d3a16585d710fe4c
+67	278	7838702657720060	backend/vm/vm_autogen/mocs_compilation.cpp	d3a16585d710fe4c
+67	278	7838702657720060	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/vm/vm_autogen/timestamp	d3a16585d710fe4c
+67	278	7838702657720060	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/vm/vm_autogen/mocs_compilation.cpp	d3a16585d710fe4c
+280	2961	7838702659851102	backend/vm/CMakeFiles/vm.dir/rvss_vm_pipelined.cpp.obj	7259123ec844aa16
+2961	3628	7838702686665405	backend/vm/libvm.a	83053ac63510f0f6
+65	291	7838703064924802	backend/vm/vm_autogen/timestamp	d3a16585d710fe4c
+65	291	7838703064924802	backend/vm/vm_autogen/mocs_compilation.cpp	d3a16585d710fe4c
+65	291	7838703064924802	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/vm/vm_autogen/timestamp	d3a16585d710fe4c
+65	291	7838703064924802	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/vm/vm_autogen/mocs_compilation.cpp	d3a16585d710fe4c
+292	2704	7838703067191941	backend/vm/CMakeFiles/vm.dir/vm_base.cpp.obj	27f5f6faf5488420
+2704	3784	7838703091321010	backend/vm/libvm.a	83053ac63510f0f6
+3784	17193	7838703102114126	risc-simulator.exe	99789d52cdbe8171
+93	1144	7838706099229768	backend/vm/vm_autogen/timestamp	d3a16585d710fe4c
+93	1144	7838706099229768	backend/vm/vm_autogen/mocs_compilation.cpp	d3a16585d710fe4c
+93	1144	7838706099229768	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/vm/vm_autogen/timestamp	d3a16585d710fe4c
+93	1144	7838706099229768	C:/Users/ASUS/OneDrive/Desktop/Comp Arch/risc-simulator/build/Desktop_Qt_6_9_3_MinGW_64_bit-Debug/backend/vm/vm_autogen/mocs_compilation.cpp	d3a16585d710fe4c
+1158	3807	7838706100617276	backend/vm/CMakeFiles/vm.dir/vm_base.cpp.obj	27f5f6faf5488420
+1178	4233	7838706100826306	backend/vm/CMakeFiles/vm.dir/rvss_vm_pipelined.cpp.obj	7259123ec844aa16
+1168	4439	7838706100717401	backend/vm/CMakeFiles/vm.dir/rvss_vm.cpp.obj	f7d391c092a0f009
+1148	4482	7838706100517383	backend/vm/CMakeFiles/vm.dir/vm_autogen/mocs_compilation.cpp.obj	2ea225c33d9359c7
+4482	5846	7838706133859620	backend/vm/libvm.a	83053ac63510f0f6
+5854	9747	7838706147567360	backend/CMakeFiles/backend.dir/utils.cpp.obj	b7d81954d251e2c2
+5871	10373	7838706147747985	backend/CMakeFiles/backend.dir/assembler/parse_formats/csr_formats.cpp.obj	fc1288610adab722
+5902	10726	7838706148057348	backend/CMakeFiles/backend.dir/assembler/parse_formats/pseudo_formats.cpp.obj	22a0937669cd6690
+5890	11104	7838706147937404	backend/CMakeFiles/backend.dir/assembler/parse_formats/i_m_formats.cpp.obj	8b3711316bc21bc8
+5880	11499	7838706147837345	backend/CMakeFiles/backend.dir/assembler/parse_formats/f_d_formats.cpp.obj	e3807662af085f53
+5847	11993	7838706147518598	backend/CMakeFiles/backend.dir/command_handler.cpp.obj	bdccb9ed8720238f
+5862	12156	7838706147658499	backend/CMakeFiles/backend.dir/assembler/parser.cpp.obj	85530544c74696ee
+12157	25795	7838706210610375	backend/libbackend.a	818ae0ff286686cd
+25796	42081	7838706347001251	frontend/CMakeFiles/frontend.dir/mainwindow.cpp.obj	3066b8af93695f9b
+42082	46831	7838706509860015	frontend/libfrontend.a	a034edbbdb35cb2a
+46832	76271	7838706557357485	risc-simulator.exe	99789d52cdbe8171
