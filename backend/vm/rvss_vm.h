@@ -93,6 +93,8 @@ public:
         return data;
     }
 
+    virtual bool IsPipelineEmpty() const { return true; }
+
 signals:
     void gprUpdated(int index, quint64 value);
     void csrUpdated(int index, quint64 value);

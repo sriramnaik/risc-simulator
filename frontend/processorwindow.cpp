@@ -7,7 +7,7 @@ ProcessorWindow::ProcessorWindow(QWidget *parent)
     : QDialog(parent)
 {
     setWindowTitle("Select Processor");
-    resize(340, 160);
+    resize(400, 160);
 
     isaCombo   = new QComboBox(this);
     stageCombo = new QComboBox(this);
@@ -17,34 +17,59 @@ ProcessorWindow::ProcessorWindow(QWidget *parent)
 
     // Populate ISA options
     isaCombo->addItems({"RV32", "RV64"});
-    // Populate stage options for RV32 by default
-    stageCombo->addItems({"Pipelined processor", "Single-cycle processor"});
 
-    // Labels for summary (shown live!)
+    // Populate stage options for RV32 by default
+    stageCombo->addItems({
+        "5-stage processor w/o forwarding or hazard detection",
+        "5-stage processor w/o hazard detection",
+        "5-Stage processor w/o forwarding unit",
+        "Single-cycle processor",
+        "5-stage processor"
+    });
+
+    // Labels for summary (plain text values)
     isaLabel   = new QLabel(this);
     stageLabel = new QLabel(this);
 
+    // --- Form layout for the top controls ---
     QFormLayout *formLayout = new QFormLayout;
     formLayout->addRow("ISA:", isaCombo);
     formLayout->addRow("Stage:", stageCombo);
 
-    QHBoxLayout *summaryLayout = new QHBoxLayout;
-    summaryLayout->addWidget(new QLabel("Selected ISA:"));
-    summaryLayout->addWidget(isaLabel);
-    summaryLayout->addWidget(new QLabel("Selected Stage:"));
-    summaryLayout->addWidget(stageLabel);
+    // --- Summary: each row is horizontal (label + value) ---
+    QVBoxLayout *summaryLayout = new QVBoxLayout;
 
+    // Row: Selected ISA: <value>
+    QHBoxLayout *isaRow = new QHBoxLayout;
+    QLabel *isaText = new QLabel("Selected ISA:", this);
+    isaRow->addWidget(isaText);
+    isaRow->addWidget(isaLabel);
+    isaRow->addStretch(1);               // push items to left, keep them compact
+    summaryLayout->addLayout(isaRow);
+
+    // Row: Selected Processor: <value>
+    QHBoxLayout *procRow = new QHBoxLayout;
+    QLabel *procText = new QLabel("Selected Processor:", this);
+    procRow->addWidget(procText);
+    procRow->addWidget(stageLabel);
+    procRow->addStretch(1);
+    summaryLayout->addLayout(procRow);
+
+    // --- OK / Cancel layout ---
     QHBoxLayout *buttonLayout = new QHBoxLayout;
     buttonLayout->addStretch(1);
     buttonLayout->addWidget(okButton);
     buttonLayout->addWidget(cancelButton);
 
+    // --- Main layout ---
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->addLayout(formLayout);
+    mainLayout->addSpacing(8);
     mainLayout->addLayout(summaryLayout);
     mainLayout->addStretch(1);
     mainLayout->addLayout(buttonLayout);
 
+    // --- Connections ---
     connect(isaCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &ProcessorWindow::onISAChanged);
     connect(stageCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -52,10 +77,11 @@ ProcessorWindow::ProcessorWindow(QWidget *parent)
     connect(okButton, &QPushButton::clicked, this, &QDialog::accept);
     connect(cancelButton, &QPushButton::clicked, this, &QDialog::reject);
 
-    // Initial values
+    // Initialize summary labels to current selections
     onISAChanged(isaCombo->currentIndex());
     onStageChanged(stageCombo->currentIndex());
 }
+
 
 void ProcessorWindow::onISAChanged(int index)
 {
@@ -66,9 +92,17 @@ void ProcessorWindow::onISAChanged(int index)
     // Change stage options based on ISA
     stageCombo->clear();
     if (isa == "RV32") {
-        stageCombo->addItems({"Pipelined processor", "Single-cycle processor"});
+        stageCombo->addItems({"5-stage processor w/o forwarding or hazard detection",
+                              "5-stage processor w/o hazard detection",
+                              "5-Stage processor w/o forwarding unit",
+                              "Single-cycle processor",
+                              "5-stage processor"});
     } else {
-        stageCombo->addItems({"Pipelined processor", "Single-cycle processor"});
+        stageCombo->addItems({"5-stage processor w/o forwarding or hazard detection",
+                              "5-stage processor w/o hazard detection",
+                              "5-Stage processor w/o forwarding unit",
+                              "Single-cycle processor",
+                              "5-stage processor"});
     }
     // Update summary for stage
     onStageChanged(stageCombo->currentIndex());

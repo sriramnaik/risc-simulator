@@ -60,6 +60,7 @@ private:
 
     bool pc_update_pending_ = false;
     uint64_t pc_update_value_ = 0;
+    bool branch_taken_this_cycle_ = false;
 
     void IF_stage();
     void ID_stage();
@@ -75,6 +76,7 @@ public:
 
     QMap<uint64_t, int> pcToLineMap;
     void setPcToLineMap(const QMap<uint64_t, int>& map) { pcToLineMap = map; }
+    bool IsPipelineEmpty() const override;
 
     void Run() override;
     void DebugRun() override;
@@ -87,6 +89,9 @@ public:
     const ID_EX& getIdEx() const { return id_ex_; }
     const EX_MEM& getExMem() const { return ex_mem_; }
     const MEM_WB& getMemWb() const { return mem_wb_; }
+
+signals:
+    void pipelineStageChanged(uint64_t pc, QString stageName);
 };
 
 #endif // RVSS_VM_PIPELINED_H

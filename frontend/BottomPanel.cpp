@@ -93,3 +93,6 @@ void BottomPanel::togglePanel(bool showData)
     else handleConsoleClicked();
 }
 
+void BottomPanel::changeTab(){
+    handleConsoleClicked();
+}

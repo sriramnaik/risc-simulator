@@ -1,7 +1,0 @@
-rv5s_autogen/timestamp: \
-	C:/Users/ASUS/OneDrive/Desktop/Comp\ Arch/risc-simulator/backend/vm/rv5s/CMakeLists.txt \
-	C:/Users/ASUS/OneDrive/Desktop/Comp\ Arch/risc-simulator/backend/vm/rv5s/rv5s_control_unit.cpp \
-	C:/Users/ASUS/OneDrive/Desktop/Comp\ Arch/risc-simulator/backend/vm/rv5s/rv5s_control_unit.h \
-	C:/Users/ASUS/OneDrive/Desktop/Comp\ Arch/risc-simulator/backend/vm/rv5s/rv5s_vm.cpp \
-	C:/Users/ASUS/OneDrive/Desktop/Comp\ Arch/risc-simulator/backend/vm/rv5s/rv5s_vm.h \
-	C:/Qt/Tools/CMake_64/bin/cmake.exe

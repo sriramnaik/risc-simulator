@@ -310,6 +310,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(vm, &RVSSVM::memoryUpdated, bottomPanel->getDataSegment(),
             &DataSegment::updateMemory);
 
+    // connect(vm, &RVSSVMPipelined::pipelineStageChanged,
+    //         this, &MainWindow::onPipelineStageChanged);
+
+
+
     // registerPanel->setregisterBitWidth(lastISA == "RV32" ? 32 : 64);
 
     // --- Connect toolbar actions ---
@@ -611,9 +616,14 @@ void MainWindow::onAssemble()
         return;
     }
 
+    if (editor) {
+        // editor->clearLineHighlight();    // remove old highlights
+        editor->clearPipelineLabels();   // remove old pipeline stage text
+    }
     std::string cppFilePath = filePath.toStdString();
     std::string startMsg = "Assemble: assembling " + cppFilePath;
     errorconsole->addMessages({startMsg});
+    editor->clearPipelineLabels();
 
     // qDebug() << "[onAssemble] Running assembler";
     program = assembler->assemble(cppFilePath);
@@ -623,7 +633,7 @@ void MainWindow::onAssemble()
         std::string successMsg = "Assemble: operation completed successfully.";
         errorconsole->addMessages({successMsg});
 
-        vm->Reset();
+
         vm->LoadProgram(program);
 
         uint64_t dataSegmentBase = 0x10000000;
@@ -647,11 +657,16 @@ void MainWindow::onAssemble()
         // Set memory starting at data segment base address
         dataSegment->clearData();
         dataSegment->setMemory(memoryWords, 0x10000000);
+        updateRegisterTable();
+        updateExecutionInfo();
+        highlightCurrentLine();
+        vm->Reset();
+    }
+    else {
+        bottomPanel->changeTab();
     }
 
     // qDebug() << "[onAssemble] Updating register table";
-    updateRegisterTable();
-    updateExecutionInfo();
     // qDebug() << "[onAssemble] DONE";
 }
 
@@ -684,6 +699,7 @@ void MainWindow::onRun()
     {
         // qDebug() << "[onRun] Blocking VM signals";
         vm->blockSignals(true);
+        editor->clearPipelineLabels();
 
         // qDebug() << "[onRun] clearLineHighlight";
         clearLineHighlight();
@@ -735,6 +751,7 @@ void MainWindow::onRun()
             // qDebug() << "[onRun] highlightCurrentLine";
             highlightCurrentLine();
 
+
             updateExecutionInfo();
 
             // ✅ Refresh memory display after execution
@@ -755,7 +772,21 @@ void MainWindow::onRun()
             QTimer *stepTimer = new QTimer(this);
             connect(stepTimer, &QTimer::timeout, this, [this, stepTimer]()
                     {
-                        if (vm->GetProgramCounter() >= vm->GetProgramSize() || vm->IsStopRequested()) {
+                        // if (vm->GetProgramCounter() >= vm->GetProgramSize() || vm->IsStopRequested()) {
+                        //     stepTimer->stop();
+                        //     stepTimer->deleteLater();
+
+                        //     updateExecutionInfo();
+                        //     refreshMemoryDisplay();  // ✅ Refresh at end
+
+                        //     QString msg = QString("Execution finished!\nInstructions: %1\nCycles: %2")
+                        //                       .arg(vm->instructions_retired_)
+                        //                       .arg(vm->cycle_s_);
+                        //     QMessageBox::information(this, "Complete", msg);
+                        //     return;
+                        // }
+
+                        if ((vm->GetProgramCounter() >= vm->GetProgramSize() && vm->IsPipelineEmpty()) || vm->IsStopRequested()) {
                             stepTimer->stop();
                             stepTimer->deleteLater();
 
@@ -840,15 +871,15 @@ void MainWindow::highlightCurrentLine()
     cursor.movePosition(QTextCursor::Start);
     cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, sourceLine - 1);
     cursor.select(QTextCursor::LineUnderCursor);
+    editor->highlightLine(sourceLine);
+    // QTextEdit::ExtraSelection highlight;
+    // highlight.cursor = cursor;
+    // highlight.format.setBackground(QColor(100, 150, 255, 100));
+    // highlight.format.setProperty(QTextFormat::FullWidthSelection, true);
 
-    QTextEdit::ExtraSelection highlight;
-    highlight.cursor = cursor;
-    highlight.format.setBackground(QColor(100, 150, 255, 100));
-    highlight.format.setProperty(QTextFormat::FullWidthSelection, true);
-
-    QList<QTextEdit::ExtraSelection> extras;
-    extras << highlight;
-    editor->setExtraSelections(extras);
+    // QList<QTextEdit::ExtraSelection> extras;
+    // extras << highlight;
+    // editor->setExtraSelections(extras);
 }
 
 void MainWindow::clearLineHighlight()
@@ -1016,61 +1047,42 @@ void MainWindow::showProcessorSelection()
         }
         vm->registers_->SetIsa(selected);
         vm->Reset(); // Optionally reset VM state to match ISA
+        auto *pipelinedVm = qobject_cast<RVSSVMPipelined *>(vm);
+        if (pipelinedVm) {
+            qDebug() << "Pipelined VM connected!";
+            connect(pipelinedVm, &RVSSVMPipelined::pipelineStageChanged,
+                    this, &MainWindow::onPipelineStageChanged);
+        } else {
+            qDebug() << "Not pipelined.";
+        }
     }
 }
 
+void MainWindow::onPipelineStageChanged(uint64_t pc, QString stage)
+{
+    CodeEditor *editor = getCurrentEditor();
+    if (!editor)
+        return;
 
-// void updatePipelineStagesInEditor(RVSSVMPipelined* backend, CodeEditor* editor) {
-//     QMap<int, QString> stageLines;
-
-//     const auto& if_id = backend->getIfId();
-//     const auto& id_ex = backend->getIdEx();
-//     const auto& ex_mem = backend->getExMem();
-//     const auto& mem_wb = backend->getMemWb();
-
-//     if (if_id.valid) {
-//         int line = backend->pcToLineMap.value(if_id.pc, -1);
-//         if (line != -1) stageLines[line] = "IF";
-//     }
-//     if (id_ex.valid) {
-//         int line = backend->pcToLineMap.value(id_ex.pc, -1);
-//         if (line != -1) stageLines[line] = "ID";
-//     }
-//     if (ex_mem.valid) {
-//         int line = backend->pcToLineMap.value(ex_mem.pc, -1);
-//         if (line != -1) stageLines[line] = "EX";
-//     }
-//     if (mem_wb.valid) {
-//         int line = backend->pcToLineMap.value(mem_wb.pc, -1);
-//         if (line != -1) stageLines[line] = "MEM";
-//     }
-
-//     editor->setPipelineStages(stageLines);
-// }
-
-void updateAllPipelineStagesInEditor(RVSSVMPipelined* backend, CodeEditor* editor) {
-    QMap<int, QString> stageLines;
-
-    if (backend->getIfId().valid) {
-        int line = backend->pcToLineMap.value(backend->getIfId().pc, -1);
-        if (line != -1) stageLines[line] = "IF";
+    // CLEAR stage: remove highlight + label
+    if (stage.endsWith("_CLEAR"))
+    {
+        QString baseStage = stage.left(stage.indexOf("_CLEAR"));
+        editor->setPipelineLabel(0, stage); // remove label text
+        return;
     }
-    if (backend->getIdEx().valid) {
-        int line = backend->pcToLineMap.value(backend->getIdEx().pc, -1);
-        if (line != -1) stageLines[line] = "ID";
-    }
-    if (backend->getExMem().valid) {
-        int line = backend->pcToLineMap.value(backend->getExMem().pc, -1);
-        if (line != -1) stageLines[line] = "EX";
-    }
-    if (backend->getMemWb().valid) {
-        int line = backend->pcToLineMap.value(backend->getMemWb().pc, -1);
-        if (line != -1) stageLines[line] = "MEM";
-    }
-    // Add WB if you track it separately similarly
 
-    // Now send the map with all active stages to the editor
-    editor->setPipelineStages(stageLines);
-    editor->highlightPipelineStages(stageLines);
+    // Convert PC -> instruction index
+    unsigned int instrIndex = static_cast<unsigned int>(pc / 4);
+
+    // Convert instruction index -> source line number
+    if (program.instruction_number_line_number_mapping.find(instrIndex) ==
+        program.instruction_number_line_number_mapping.end())
+        return;
+
+    unsigned int sourceLine = program.instruction_number_line_number_mapping[instrIndex]; // 1-based
+
+    // Highlight that line and show the stage label
+    editor->setPipelineLabel(pc, stage);
 }
 

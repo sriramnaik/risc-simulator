@@ -16,7 +16,15 @@ public:
     void lineNumberAreaPaintEvent(QPaintEvent *event);
     void goToLine(int lineNumber);
     void setPipelineStages(const QMap<int, QString> &stages);
-    void highlightPipelineStages(const QMap<int, QString>& stages);
+    void highlightLine(int lineNumber);
+    void paintEvent(QPaintEvent *event) override;
+    QMap<int, QString> getPipelineStages() const;
+    void setPipelineLabel(uint64_t pc, const QString &stage);
+    void clearPipelineLabels();
+    QMap<QString, int> stageHighlights;   // stage -> line
+    void highlightLineForStage(const QString &stage, int sourceLine);
+    void updateHighlights();
+    void clearHighlightForStage(const QString &stage);
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
@@ -28,7 +36,9 @@ private slots:
 
 private:
     QWidget *lineNumberArea;
-    QMap<int, QString> pipelineStageNames;
+    void paintPipelineStages(QPainter &painter, const QRect &rect);
+    QMap<uint64_t, QString> pipelineLabels;
+
 };
 
 class LineNumberArea : public QWidget
@@ -47,6 +57,9 @@ protected:
 
 private:
     CodeEditor *codeEditor;
+
+
 };
 
 #endif // CODEEDITOR_H
+

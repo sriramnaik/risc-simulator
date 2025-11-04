@@ -54,6 +54,7 @@ public:
     DataSegment *getDataSegment() { return dataSegment; }
 
     void togglePanel(bool showData);
+    void changeTab();
 
 private slots:
     void handleConsoleClicked();

@@ -92,7 +92,9 @@ set(VM_SOURCES
 add_library(vm STATIC ${VM_SOURCES}
     hazardUnit.h
     pipelineRegisters.h
-    rvss_vm_pipelined.h rvss_vm_pipelined.cpp)
+    rvss_vm_pipelined.h rvss_vm_pipelined.cpp
+    hazardUnit.cpp
+    forwarding_unit.h forwarding_unit.cpp)
 
 # vm needs to link its subdirectories AND common
 target_link_libraries(vm PUBLIC
