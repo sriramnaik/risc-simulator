@@ -6,6 +6,8 @@
 #include <QMap>
 #include "rvss_control_unit.h"
 #include "rvss_vm.h"
+#include "hazardUnit.h"
+#include "forwarding_unit.h"
 
 #include <cstdint>
 
@@ -26,6 +28,7 @@ private:
         bool valid = false;
         uint64_t pc = 0;
         uint32_t instruction = 0;
+        bool is_syscall;
 
         uint8_t rs1 = 0, rs2 = 0, rd = 0;
         uint8_t funct3 = 0, funct7 = 0;
@@ -89,6 +92,19 @@ public:
     const ID_EX& getIdEx() const { return id_ex_; }
     const EX_MEM& getExMem() const { return ex_mem_; }
     const MEM_WB& getMemWb() const { return mem_wb_; }
+
+    bool hazard_detection_enabled_ = true;
+    bool forwarding_enabled_ = false;
+
+    void SetForwardingEnabled(bool enabled) { forwarding_enabled_ = enabled; }
+    bool GetForwardingEnabled() const { return forwarding_enabled_; }
+
+    ForwardingUnit forwarding_unit_;
+
+    HazardDetectionUnit hazard_unit_;
+    bool stall_ = false; // when true, IF/ID is frozen and ID/EX gets a bubble
+
+    void DumpPipelineState();
 
 signals:
     void pipelineStageChanged(uint64_t pc, QString stageName);

@@ -1,6 +1,6 @@
 #include "assembler.h"
-// #include "../utils.h"
-// #include "../globals.h"
+#include "../utils.h"
+#include "../globals.h"
 #include "lexer.h"
 #include "../vm_asm_mw.h"
 
@@ -84,7 +84,8 @@ AssembledProgram Assembler::assemble(const std::string &filename) {
 
         // Optionally, log/emit as needed
     }
-    // DumpDisasssembly(globals::disassembly_file_path, program);
+    DumpDisasssembly(globals::disassembly_file_path, program);
+    // std::cout << program << std::endl;
 
     // DumpNoErrors(globals::errors_dump_file_path);
 
@@ -107,7 +108,7 @@ AssembledProgram Assembler::assemble(const std::string &filename) {
 
       emit errorsAvailable(qErrors);
 
-    // DumpErrors(globals::errors_dump_file_path, parser.getErrors());
+    DumpErrors(globals::errors_dump_file_path, parser.getErrors());
     // if (globals::verbose_errors_print) {
     //   parser.printErrors();
     // }

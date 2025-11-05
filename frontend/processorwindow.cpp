@@ -7,7 +7,7 @@ ProcessorWindow::ProcessorWindow(QWidget *parent)
     : QDialog(parent)
 {
     setWindowTitle("Select Processor");
-    resize(400, 160);
+    resize(340, 160);
 
     isaCombo   = new QComboBox(this);
     stageCombo = new QComboBox(this);
@@ -21,10 +21,10 @@ ProcessorWindow::ProcessorWindow(QWidget *parent)
     // Populate stage options for RV32 by default
     stageCombo->addItems({
         "5-stage processor w/o forwarding or hazard detection",
+        "5-stage processor with forwarding and hazard detection",
         "5-stage processor w/o hazard detection",
         "5-Stage processor w/o forwarding unit",
-        "Single-cycle processor",
-        "5-stage processor"
+        "Single-cycle processor"
     });
 
     // Labels for summary (plain text values)
@@ -93,16 +93,18 @@ void ProcessorWindow::onISAChanged(int index)
     stageCombo->clear();
     if (isa == "RV32") {
         stageCombo->addItems({"5-stage processor w/o forwarding or hazard detection",
+                              "5-stage processor with forwarding and hazard detection",
                               "5-stage processor w/o hazard detection",
                               "5-Stage processor w/o forwarding unit",
-                              "Single-cycle processor",
-                              "5-stage processor"});
+                              "Single-cycle processor"
+                              });
     } else {
         stageCombo->addItems({"5-stage processor w/o forwarding or hazard detection",
+                              "5-stage processor with forwarding and hazard detection",
                               "5-stage processor w/o hazard detection",
                               "5-Stage processor w/o forwarding unit",
-                              "Single-cycle processor",
-                              "5-stage processor"});
+                              "Single-cycle processor"
+                              });
     }
     // Update summary for stage
     onStageChanged(stageCombo->currentIndex());

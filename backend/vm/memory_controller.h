@@ -7,10 +7,10 @@
 #ifndef MEMORY_CONTROLLER_H
 #define MEMORY_CONTROLLER_H
 
-#include "../config.h"
+// #include "../config.h"
 #include "main_memory.h"
 
-#include <iostream>
+// #include <iostream>
 #include <string>
 #include <vector>
 

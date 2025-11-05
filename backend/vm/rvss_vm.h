@@ -5,6 +5,8 @@
 #include "../vm_base.h"
 #include "rvss_control_unit.h"
 #include "memory_controller.h"//;
+#include "forwarding_unit.h"
+#include "hazardUnit.h"
 #include <stack>
 #include <vector>
 #include <atomic>
@@ -94,6 +96,18 @@ public:
     }
 
     virtual bool IsPipelineEmpty() const { return true; }
+    bool hazard_detection_enabled_ = false;
+    bool forwarding_enabled_ = false;
+
+    void SetForwardingEnabled(bool enabled) { forwarding_enabled_ = enabled; }
+    bool GetForwardingEnabled() const { return forwarding_enabled_; }
+
+    ForwardingUnit forwarding_unit_;
+
+    HazardDetectionUnit hazard_unit_;
+    bool stall_ = false; // when true, IF/ID is frozen and ID/EX gets a bubble
+
+    void DumpPipelineState() {return ;}
 
 signals:
     void gprUpdated(int index, quint64 value);

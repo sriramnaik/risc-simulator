@@ -1,6 +1,6 @@
 #include "vm_base.h"
 
-//#include "../globals.h"
+#include "../globals.h"
 #include "../config.h"
 
 #include <cstdint>
@@ -74,7 +74,7 @@ void VmBase::LoadProgram(const AssembledProgram &program) {
   std::cout << "VM_PROGRAM_LOADED" << std::endl;
   output_status_ = "VM_PROGRAM_LOADED";
 
-  // DumpState(globals::vm_state_dump_file_path);
+  DumpState(globals::vm_state_dump_file_path);
     
 
 }
@@ -281,7 +281,6 @@ void VmBase::DumpState(const std::filesystem::path &filename) {
     file << "    \"output_status\": \"" << output_status_ << "\"\n";
     file << "}\n";
     file.close();
-
 }
 
 void VmBase::ModifyRegister(const std::string &reg_name, uint64_t value) {

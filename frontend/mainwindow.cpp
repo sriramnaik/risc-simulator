@@ -29,6 +29,7 @@
 #include <QStackedWidget>
 // #include <QDebug>
 #include <QSlider>
+#include <qapplication.h>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
@@ -244,13 +245,13 @@ MainWindow::MainWindow(QWidget *parent)
                 // qDebug() << "[gprUpdated] ERROR: registerPanel is null!";
                 return;
             }
-            
+
             QTabWidget* tabs = registerPanel->getTabWidget();
             if (!tabs) {
                 // qDebug() << "[gprUpdated] ERROR: tabWidget is null!";
                 return;
             }
-            
+
             RegisterTable* regTable = registerPanel->getRegTable();
             if (!regTable) {
                 // qDebug() << "[gprUpdated] ERROR: regTable is null!";
@@ -259,10 +260,10 @@ MainWindow::MainWindow(QWidget *parent)
             if (index == 2) {
                 dataSegment->updateStackPointer(static_cast<uint64_t>(value));
             }
-            
+
             // qDebug() << "[gprUpdated] Switching to tab 0";
             tabs->setCurrentIndex(0);
-            
+
             // qDebug() << "[gprUpdated] Updating register";
             regTable->updateRegister(index, static_cast<quint64>(value));
             // qDebug() << "[gprUpdated] DONE";
@@ -278,22 +279,22 @@ MainWindow::MainWindow(QWidget *parent)
                 // qDebug() << "[fprUpdated] ERROR: registerPanel is null!";
                 return;
             }
-            
+
             QTabWidget* tabs = registerPanel->getTabWidget();
             if (!tabs) {
                 // qDebug() << "[fprUpdated] ERROR: tabWidget is null!";
                 return;
             }
-            
+
             RegisterTable* fprTable = registerPanel->getFprTable();
             if (!fprTable) {
                 // qDebug() << "[fprUpdated] ERROR: fprTable is null!";
                 return;
             }
-            
+
             // qDebug() << "[fprUpdated] Switching to tab 1";
             tabs->setCurrentIndex(1);
-            
+
             // qDebug() << "[fprUpdated] Updating register";
             fprTable->updateRegister(index, static_cast<quint64>(value));
             // qDebug() << "[fprUpdated] DONE";
@@ -627,6 +628,8 @@ void MainWindow::onAssemble()
 
     // qDebug() << "[onAssemble] Running assembler";
     program = assembler->assemble(cppFilePath);
+    // vm->LoadProgram(program);
+
 
     if (program.errorCount == 0)
     {
@@ -634,7 +637,7 @@ void MainWindow::onAssemble()
         errorconsole->addMessages({successMsg});
 
 
-        vm->LoadProgram(program);
+        // vm->LoadProgram(program);
 
         uint64_t dataSegmentBase = 0x10000000;
         size_t memorySize = 512; // 512 byte
@@ -707,7 +710,7 @@ void MainWindow::onRun()
         // qDebug() << "[onRun] vm->Reset()";
         vm->Reset();
 
-        // qDebug() << "[onRun] vm->LoadProgram()";.
+        // qDebug() << "[onRun] vm->LoadProgram()";
         vm->LoadProgram(program);
 
         // ✅ Load actual memory from VM
@@ -742,8 +745,18 @@ void MainWindow::onRun()
             // Fast mode
             // qDebug() << "[onRun] Fast mode";
             // qDebug() << "[onRun] Calling vm->Run()";
+            // vm->LoadProgram(program);
+            // vm->Reset();
+            // vm->LoadProgram(program);
+            // vm->memory_controller_.PrintMemory(0,1);
+            // std::vector<std::string> name;
+            // name.push_back("0");
+            // name.push_back("3");
+
+            // vm->memory_controller_.DumpMemory(name);
             vm->Run();
             // qDebug() << "[onRun] vm->Run() completed";
+            // QApplication::processEvents();
 
             // qDebug() << "[onRun] updateRegisterTable";
             updateRegisterTable();
@@ -824,7 +837,12 @@ void MainWindow::onStep()
     if (!vm)
         return;
 
+    if(vm->program_counter_ == 0){
+        vm->LoadProgram(program);
+    }
     vm->Step();
+    QCoreApplication::processEvents();
+
     updateRegisterTable();
     highlightCurrentLine();
     updateExecutionInfo();
@@ -1042,7 +1060,7 @@ void MainWindow::showProcessorSelection()
 
         if (lastName == "Single-cycle processor") {
             vm = new RVSSVM(registerPanel->getRegisterFile(), this); // Standard VM
-        } else if (lastName == "Pipelined processor") {
+        } else if (lastName == "5-stage processor w/o forwarding or hazard detection") {
             vm = new RVSSVMPipelined(registerPanel->getRegisterFile(), this); // Use pipelined backend
         }
         vm->registers_->SetIsa(selected);

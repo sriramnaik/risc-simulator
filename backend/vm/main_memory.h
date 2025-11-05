@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <cstdint>
 #include <string>
-#include <stdexcept>
+// #include <stdexcept>
 
 /**
  * @brief Represents a memory block containing 1 KB of memory.

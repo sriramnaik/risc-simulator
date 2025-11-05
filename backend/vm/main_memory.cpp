@@ -16,7 +16,6 @@
 #include <fstream>
 #include <iomanip>
 #include <algorithm>
-#include <sstream>
 
 uint8_t Memory::Read(uint64_t address) {
   if (address >= memory_size_) {
@@ -24,6 +23,7 @@ uint8_t Memory::Read(uint64_t address) {
   }
   uint64_t block_index = GetBlockIndex(address);
   uint64_t offset = GetBlockOffset(address);
+  // std::cout << "block index : " << block_index << " offset: " << offset << " value :" << blocks_[block_index].data[offset]<<std::endl;
   if (!IsBlockPresent(block_index)) {
     return 0;
   }
@@ -38,6 +38,7 @@ void Memory::Write(uint64_t address, uint8_t value) {
   uint64_t offset = GetBlockOffset(address);
   EnsureBlockExists(block_index);
   blocks_[block_index].data[offset] = value;
+  // std::cout << blocks_[block_index].data[offset] << " " << value << std::endl;
 }
 
 uint64_t Memory::GetBlockIndex(uint64_t address) const {
@@ -89,9 +90,11 @@ uint16_t Memory::ReadHalfWord(uint64_t address) {
 }
 
 uint32_t Memory::ReadWord(uint64_t address) {
+    // std::cout << "reading the instruction : " << address << " value: " << ReadGeneric<uint32_t>(address)<<  std::endl;
   if (address >= memory_size_ - 3) {
     throw std::out_of_range(std::string("Memory address out of range: ") + std::to_string(address));
   }
+
   return ReadGeneric<uint32_t>(address);
 }
 
@@ -143,9 +146,11 @@ void Memory::WriteHalfWord(uint64_t address, uint16_t value) {
 }
 
 void Memory::WriteWord(uint64_t address, uint32_t value) {
+
   if (address >= memory_size_ - 3) {
     throw std::out_of_range(std::string("Memory address out of range: ") + std::to_string(address));
   }
+  // std::cout << "reading the instruction : " << address << " value: " << value <<  std::endl;
   WriteGeneric<uint32_t>(address, value);
 }
 
@@ -208,7 +213,7 @@ void Memory::DumpMemory(std::vector<std::string> args) {
         throw std::runtime_error("Unable to open memory dump file: " + globals::memory_dump_file_path.string());
     }
     file << "{\n";
-
+    // std::cout << "In Dump MEmory function" << std::endl;
     for (size_t i = 0; i < args.size(); i+=2) {
         if (i + 1 >= args.size()) {
             throw std::invalid_argument("Invalid number of arguments for memory dump.");
@@ -242,7 +247,7 @@ void Memory::DumpMemory(std::vector<std::string> args) {
     file << "}\n";
     file.close();
 
-    std::cout << "VM_MEMORY_DUMPED" << std::endl;
+    // std::cout << "VM_MEMORY_DUMPED" << std::endl;
 
 }
 
