@@ -63,7 +63,7 @@ private:
 
     bool pc_update_pending_ = false;
     uint64_t pc_update_value_ = 0;
-    bool branch_taken_this_cycle_ = false;
+    // bool branch_taken_this_cycle_ = false;
 
     void IF_stage();
     void ID_stage();
@@ -93,8 +93,16 @@ public:
     const EX_MEM& getExMem() const { return ex_mem_; }
     const MEM_WB& getMemWb() const { return mem_wb_; }
 
-    bool hazard_detection_enabled_ = true;
-    bool forwarding_enabled_ = false;
+    bool hazard_detection_enabled_;
+    bool forwarding_enabled_;
+
+    bool branch_prediction_enabled_ = false;  // enables branch prediction (static or dynamic)
+    bool dynamic_branch_prediction_enabled_ = false; // enables dynamic mode when branch_prediction_enabled_ is true
+
+    static constexpr int BHT_SIZE = 256;
+    std::vector<bool> branch_history_table_;      // 1-bit dynamic predictor bits
+    std::vector<uint64_t> branch_target_buffer_;  // branch target addresses
+
 
     void SetForwardingEnabled(bool enabled) { forwarding_enabled_ = enabled; }
     bool GetForwardingEnabled() const { return forwarding_enabled_; }
@@ -105,6 +113,10 @@ public:
     bool stall_ = false; // when true, IF/ID is frozen and ID/EX gets a bubble
 
     void DumpPipelineState();
+    void SetPipelineConfig(bool hazardEnabled,
+                           bool forwardingEnabled,
+                           bool branchPredictionEnabled,
+                           bool dynamicPredictionEnabled) override;
 
 signals:
     void pipelineStageChanged(uint64_t pc, QString stageName);

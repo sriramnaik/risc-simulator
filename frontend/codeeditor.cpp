@@ -159,12 +159,50 @@ void CodeEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
     }
 }
 
+// void CodeEditor::paintEvent(QPaintEvent *event)
+// {
+//     // Call parent to draw the text editor content
+//     QPlainTextEdit::paintEvent(event);
+
+//     // Paint pipeline stage labels on the right side of viewport (only if pipelineLabels is not empty)
+//     if (!pipelineLabels.isEmpty())
+//     {
+//         QPainter painter(viewport());
+//         QTextBlock block = firstVisibleBlock();
+//         int blockNumber = block.blockNumber();
+
+//         int top = static_cast<int>(blockBoundingGeometry(block)
+//                                        .translated(contentOffset())
+//                                        .top());
+//         int bottom = top + static_cast<int>(blockBoundingRect(block).height());
+//         int rightMargin = viewport()->width() - 50; // adjust spacing as needed
+
+//         while (block.isValid() && top <= event->rect().bottom())
+//         {
+//             if (block.isVisible() && bottom >= event->rect().top())
+//             {
+//                 uint64_t pc = blockNumber * 4; // assuming each instruction = 4 bytes
+//                 if (pipelineLabels.contains(pc))
+//                 {
+//                     QString stage = pipelineLabels[pc];
+//                     painter.setPen(Qt::white);
+//                     painter.setFont(font());
+//                     painter.drawText(rightMargin, top + fontMetrics().ascent(), stage);
+//                 }
+//             }
+
+//             block = block.next();
+//             top = bottom;
+//             bottom = top + static_cast<int>(blockBoundingRect(block).height());
+//             ++blockNumber;
+//         }
+//     }
+// }
+
 void CodeEditor::paintEvent(QPaintEvent *event)
 {
-    // Call parent to draw the text editor content
     QPlainTextEdit::paintEvent(event);
 
-    // Paint pipeline stage labels on the right side of viewport (only if pipelineLabels is not empty)
     if (!pipelineLabels.isEmpty())
     {
         QPainter painter(viewport());
@@ -175,16 +213,17 @@ void CodeEditor::paintEvent(QPaintEvent *event)
                                        .translated(contentOffset())
                                        .top());
         int bottom = top + static_cast<int>(blockBoundingRect(block).height());
+
         int rightMargin = viewport()->width() - 50; // adjust spacing as needed
 
         while (block.isValid() && top <= event->rect().bottom())
         {
             if (block.isVisible() && bottom >= event->rect().top())
             {
-                uint64_t pc = blockNumber * 4; // assuming each instruction = 4 bytes
-                if (pipelineLabels.contains(pc))
+                int lineNumber = blockNumber + 1;  // 1-based line number
+                if (pipelineLabels.contains(lineNumber))
                 {
-                    QString stage = pipelineLabels[pc];
+                    QString stage = pipelineLabels[lineNumber];
                     painter.setPen(Qt::white);
                     painter.setFont(font());
                     painter.drawText(rightMargin, top + fontMetrics().ascent(), stage);
@@ -198,6 +237,7 @@ void CodeEditor::paintEvent(QPaintEvent *event)
         }
     }
 }
+
 
 void CodeEditor::goToLine(int lineNumber)
 {
@@ -234,45 +274,111 @@ void CodeEditor::goToLine(int lineNumber)
 //     setExtraSelections(extraSelections);
 // }
 
-void CodeEditor::setPipelineLabel(uint64_t pc, const QString &stage)
+// void CodeEditor::setPipelineLabel(uint64_t pc, const QString &stage,int line)
+// {
+//     if (stage.endsWith("_CLEAR"))
+//     {
+//         QString baseStage = stage.left(stage.indexOf("_CLEAR"));
+
+//         // remove any label with this stage name (regardless of PC)
+//         QList<uint64_t> keysToRemove;
+//         for (auto it = pipelineLabels.begin(); it != pipelineLabels.end(); ++it)
+//         {
+//             if (it.value() == baseStage)
+//                 keysToRemove.append(it.key());
+//         }
+//         for (uint64_t key : keysToRemove)
+//             pipelineLabels.remove(key);
+
+//         // remove highlight for that stage
+
+//         viewport()->update();
+//         return;
+//     }
+
+//     // NORMAL CASE: add/replace the label for this PC
+//     // First remove existing entry that had this same stage (so stage appears only once)
+//     QList<uint64_t> toRemove;
+//     for (auto it = pipelineLabels.begin(); it != pipelineLabels.end(); ++it)
+//     {
+//         if (it.value() == stage)
+//             toRemove.append(it.key());
+//     }
+//     for (uint64_t key : toRemove)
+//         pipelineLabels.remove(key);
+
+//     // Now set label
+//     pipelineLabels[pc] = stage;
+
+//     // Update highlight for this stage (pc->line conversion done in highlightLineForStage)
+//     // NOTE: highlightLineForStage expects a 1-based sourceLine (matching your other helpers)
+//     int sourceLine = (int)(pc / 4) + 1;
+
+//     viewport()->update();
+// }
+
+// void CodeEditor::setPipelineLabel(int line, const QString &stage)
+// {
+//     if (stage.endsWith("_CLEAR"))
+//     {
+//         QString baseStage = stage.left(stage.indexOf("_CLEAR"));
+
+//         // Remove any label with this stage name (regardless of line)
+//         QList<int> keysToRemove;
+//         for (auto it = pipelineLabels.begin(); it != pipelineLabels.end(); ++it)
+//         {
+//             if (it.value() == baseStage)
+//                 keysToRemove.append(it.key());
+//         }
+//         for (int key : keysToRemove)
+//             pipelineLabels.remove(key);
+
+//         viewport()->update();
+//         return;
+//     }
+
+//     // NORMAL CASE: add/replace the label for this line
+//     // Remove existing entry that had the same stage (so only one of each stage exists)
+//     QList<int> toRemove;
+//     for (auto it = pipelineLabels.begin(); it != pipelineLabels.end(); ++it)
+//     {
+//         if (it.value() == stage)
+//             toRemove.append(it.key());
+//     }
+//     for (int key : toRemove)
+//         pipelineLabels.remove(key);
+
+//     // Set label for this line
+//     pipelineLabels[line] = stage;
+
+//     // Redraw the viewport
+//     viewport()->update();
+// }
+
+void CodeEditor::setPipelineLabel(int line, const QString &stage)
 {
-    if (stage.endsWith("_CLEAR"))
-    {
+    if (stage.endsWith("_CLEAR")) {
         QString baseStage = stage.left(stage.indexOf("_CLEAR"));
 
-        // remove any label with this stage name (regardless of PC)
-        QList<uint64_t> keysToRemove;
-        for (auto it = pipelineLabels.begin(); it != pipelineLabels.end(); ++it)
-        {
-            if (it.value() == baseStage)
-                keysToRemove.append(it.key());
-        }
-        for (uint64_t key : keysToRemove)
-            pipelineLabels.remove(key);
-
-        // remove highlight for that stage
+        // Remove the label only for the given line if the stage matches
+        if (pipelineLabels.contains(line) && pipelineLabels.value(line) == baseStage)
+            pipelineLabels.remove(line);
 
         viewport()->update();
         return;
     }
 
-    // NORMAL CASE: add/replace the label for this PC
-    // First remove existing entry that had this same stage (so stage appears only once)
-    QList<uint64_t> toRemove;
-    for (auto it = pipelineLabels.begin(); it != pipelineLabels.end(); ++it)
-    {
+    // Remove any existing label with this stage (ensure only one instance per stage exists)
+    QList<int> toRemove;
+    for (auto it = pipelineLabels.begin(); it != pipelineLabels.end(); ++it) {
         if (it.value() == stage)
             toRemove.append(it.key());
     }
-    for (uint64_t key : toRemove)
+    for (int key : toRemove)
         pipelineLabels.remove(key);
 
-    // Now set label
-    pipelineLabels[pc] = stage;
-
-    // Update highlight for this stage (pc->line conversion done in highlightLineForStage)
-    // NOTE: highlightLineForStage expects a 1-based sourceLine (matching your other helpers)
-    int sourceLine = (int)(pc / 4) + 1;
+    // Set label for this line
+    pipelineLabels[line] = stage;
 
     viewport()->update();
 }

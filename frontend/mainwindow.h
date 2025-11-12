@@ -16,6 +16,7 @@ class RegisterPanel;
 class ErrorConsole;
 class Assembler;
 class RVSSVM;
+class RVSSVMPipelined;
 struct ErrorMessage;
 
 struct FileTab
@@ -43,6 +44,8 @@ private:
     Assembler *assembler;
     ErrorConsole *errorconsole;
     RVSSVM *vm;
+    RVSSVM* singleCycleVm = nullptr;
+    RVSSVMPipelined* pipelinedVm = nullptr;
 
     QVector<FileTab> fileTabs;
 

@@ -96,16 +96,10 @@ public:
     }
 
     virtual bool IsPipelineEmpty() const { return true; }
-    bool hazard_detection_enabled_ = false;
-    bool forwarding_enabled_ = false;
-
-    void SetForwardingEnabled(bool enabled) { forwarding_enabled_ = enabled; }
-    bool GetForwardingEnabled() const { return forwarding_enabled_; }
-
-    ForwardingUnit forwarding_unit_;
-
-    HazardDetectionUnit hazard_unit_;
-    bool stall_ = false; // when true, IF/ID is frozen and ID/EX gets a bubble
+    virtual void SetPipelineConfig(bool hazardEnabled,
+                                   bool forwardingEnabled,
+                                   bool branchPredictionEnabled,
+                                   bool dynamicPredictionEnabled) {return;}
 
     void DumpPipelineState() {return ;}
 

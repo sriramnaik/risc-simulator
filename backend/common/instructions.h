@@ -53,7 +53,8 @@ enum class Instruction {
   kfcvt_s_d, kfcvt_d_s,
   kfeq_d, kflt_d, kfle_d,
   kfclass_d, kfcvt_w_d, kfcvt_wu_d, kfcvt_d_w, kfcvt_d_wu,
-  kfcvt_l_d, kfcvt_lu_d, kfmv_x_d, kfcvt_d_l, kfcvt_d_lu, kfmv_d_x
+  kfcvt_l_d, kfcvt_lu_d, kfmv_x_d, kfcvt_d_l, kfcvt_d_lu, kfmv_d_x,
+    INVALID,COUNT
 };
 
 // TODO: use enum class for instruction encoding
@@ -77,7 +78,7 @@ extern std::unordered_map<Instruction, InstructionEncoding> instruction_encoding
 
 extern std::unordered_map<std::string, Instruction> instruction_string_map;
 
-
+InstructionEncoding get_instr_encoding(Instruction instr);
 
 struct RTypeInstructionEncoding {
   std::bitset<7> opcode;
@@ -277,7 +278,7 @@ extern std::unordered_map<std::string, FDSTypeInstructionEncoding> F_D_S_type_in
 
 /**
  * @brief A map that associates instruction names with their expected syntax.
- * 
+ *
  * This map stores the expected syntax for various instructions, indexed by their names.
  */
 extern std::unordered_map<std::string, std::vector<SyntaxType>> instruction_syntax_map;
@@ -319,3 +320,6 @@ std::string getExpectedSyntaxes(const std::string &opcode);
 
 
 #endif // INSTRUCTIONS_H
+
+
+

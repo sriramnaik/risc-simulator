@@ -23,7 +23,8 @@ ProcessorWindow::ProcessorWindow(QWidget *parent)
         "5-stage processor w/o forwarding or hazard detection",
         "5-stage processor with forwarding and hazard detection",
         "5-stage processor w/o hazard detection",
-        "5-Stage processor w/o forwarding unit",
+        "5-stage processor w/o forwarding unit",
+        "5-stage processor with static Branch prediction",
         "Single-cycle processor"
     });
 
@@ -95,14 +96,16 @@ void ProcessorWindow::onISAChanged(int index)
         stageCombo->addItems({"5-stage processor w/o forwarding or hazard detection",
                               "5-stage processor with forwarding and hazard detection",
                               "5-stage processor w/o hazard detection",
-                              "5-Stage processor w/o forwarding unit",
+                              "5-stage processor w/o forwarding unit",
+                              "5-stage processor with static Branch prediction",
                               "Single-cycle processor"
                               });
     } else {
         stageCombo->addItems({"5-stage processor w/o forwarding or hazard detection",
                               "5-stage processor with forwarding and hazard detection",
                               "5-stage processor w/o hazard detection",
-                              "5-Stage processor w/o forwarding unit",
+                              "5-stage processor w/o forwarding unit",
+                              "5-stage processor with static Branch prediction",
                               "Single-cycle processor"
                               });
     }

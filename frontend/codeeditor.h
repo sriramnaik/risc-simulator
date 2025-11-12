@@ -19,7 +19,8 @@ public:
     void highlightLine(int lineNumber);
     void paintEvent(QPaintEvent *event) override;
     QMap<int, QString> getPipelineStages() const;
-    void setPipelineLabel(uint64_t pc, const QString &stage);
+    // void setPipelineLabel(uint64_t pc, const QString &stage,int line);
+    void setPipelineLabel(int line,const QString &stage);
     void clearPipelineLabels();
     QMap<QString, int> stageHighlights;   // stage -> line
     void highlightLineForStage(const QString &stage, int sourceLine);

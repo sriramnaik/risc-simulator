@@ -201,10 +201,12 @@ std::unordered_map<Instruction, InstructionEncoding> instruction_encoding_map = 
     {Instruction::kfnmsub_d, {0b1001011, 0b01, -1, -1, -1, -1}},
     {Instruction::kfnmadd_d, {0b1001111, 0b01, -1, -1, -1, -1}},
 
-
-
-
 };
+
+InstructionEncoding get_instr_encoding(Instruction instr){
+   auto ans = instruction_encoding_map.find(instr);
+    return ans->second;
+}
 
 std::unordered_map<std::string, Instruction> instruction_string_map = {
     {"add", Instruction::kadd},
@@ -1235,3 +1237,4 @@ std::string getExpectedSyntaxes(const std::string &opcode) {
 }
 
 } // namespace instruction_set
+

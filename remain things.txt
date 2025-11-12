@@ -1,0 +1,9 @@
+remain things
+  check sd and normal testing pipelined version.
+  make to control the infinte loop 
+ datasegment update problem.
+
+pipeline problems: 
+	pipline stage representation error not showing not the correct line numbers.(solved but with last WB is shown) 
+
+ld is not working
