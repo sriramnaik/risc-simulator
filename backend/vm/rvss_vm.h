@@ -80,7 +80,7 @@ public:
     void DebugRun() override;
     void Step() override;
     void Undo() override;
-    void Redo() override;
+    // void Redo() override;
     void Reset() override;
     void RequestStop() { stop_requested_ = true; }
     bool IsStopRequested() const { return stop_requested_; }

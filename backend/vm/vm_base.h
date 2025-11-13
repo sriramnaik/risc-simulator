@@ -89,7 +89,8 @@ public:
     virtual void DebugRun() = 0;
     virtual void Step() = 0;
     virtual void Undo() = 0;
-    virtual void Redo() = 0;
+    // virtual void Redo() = 0;
+    bool recording_enabled_ = false;
     virtual void Reset() = 0;
 
     void DumpState(const std::filesystem::path &filename);

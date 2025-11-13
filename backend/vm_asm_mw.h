@@ -1,9 +1,3 @@
-/**
- * @file vm_asm_mw.h
- * @brief Contains functions to handle assembler input for the VM.
- * @author Vishank Singh, https://github.com/VishankSingh
- */
-
 #ifndef VM_ASM_MW_H
 #define VM_ASM_MW_H
 

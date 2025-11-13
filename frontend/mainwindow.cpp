@@ -80,6 +80,8 @@ MainWindow::MainWindow(QWidget *parent)
     QAction *assembleAction = new QAction(QIcon("icons/processo.png"), "Assemble", this);
     QAction *runAction = new QAction(QIcon("icons/run.png"), "Run", this);
     QAction *stepAction = new QAction(QIcon("icons/step.png"), "Step", this);
+    QAction *undoAction = new QAction(QIcon("icons/undo.png"),"Undo",this);
+    QAction *resetAction = new QAction(QIcon("icons/reset.png"),"reset",this);
     QAction *pauseAction = new QAction(QIcon("icons/pause.png"), "Pause", this);
     QAction *stopAction = new QAction(QIcon("icons/stop.png"), "Stop", this);
 
@@ -94,6 +96,8 @@ MainWindow::MainWindow(QWidget *parent)
     toolBar->addAction(stepAction);
     toolBar->addAction(pauseAction);
     toolBar->addAction(stopAction);
+    toolBar->addAction(undoAction);
+    toolBar->addAction(resetAction);
     toolBar->addSeparator();
 
     // Speed control
@@ -331,6 +335,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(stepAction, &QAction::triggered, this, &MainWindow::onStep);
     connect(pauseAction, &QAction::triggered, this, &MainWindow::onPause);
     connect(stopAction, &QAction::triggered, this, &MainWindow::onStop);
+    connect(undoAction, &QAction::triggered, this, &MainWindow::onUndo);
+    connect(resetAction, &QAction::triggered, this, &MainWindow::onReset);
     connect(processor, &QAction::triggered, this, &MainWindow::showProcessorSelection);
 
     // --- Window setup ---
@@ -702,43 +708,17 @@ void MainWindow::onRun()
         return;
     }
 
+    onReset();
+    vm->stop_requested_ = false;
+    // vm->program_counter_ = 0;
+
     try
     {
-        // RVSSVMPipelined *pipeVm = qobject_cast<RVSSVMPipelined *>(vm);
-        // qDebug() << pipelinedVm;
-        // qDebug() << "[onRun] Blocking VM signals";
         vm->blockSignals(true);
         editor->clearPipelineLabels();
 
         // qDebug() << "[onRun] clearLineHighlight";
         clearLineHighlight();
-
-        // qDebug() << "[onRun] vm->Reset()";
-        // vm->Reset();
-
-        // qDebug() << "[onRun] vm->LoadProgram()";
-        // vm->LoadProgram(program);
-
-        // ✅ Load actual memory from VM
-        // DataSegment *dataSegment = bottomPanel->getDataSegment();
-        // // After assemble & LoadProgram:
-        // uint64_t base = 0x10000000;
-        // size_t bytes = 512; // set as needed
-        // std::vector<uint8_t> mem = vm->GetMemoryRange(base, bytes);
-
-        // QVector<quint64> memoryWords;
-        // for (size_t i = 0; i < mem.size(); i += 4)
-        // {
-        //     uint32_t word = 0;
-        //     for (size_t j = 0; j < 4 && (i + j) < mem.size(); j++)
-        //     {
-        //         word |= (static_cast<uint32_t>(mem[i + j]) << (j * 8));
-        //     }
-        //     memoryWords.append(word);
-        // }
-        // dataSegment->clearData();
-        // dataSegment->setMemory(memoryWords, base);
-
         updateExecutionInfo();
         // qDebug() << "[onRun] Unblocking VM signals";
         vm->blockSignals(false);
@@ -763,7 +743,7 @@ void MainWindow::onRun()
         else
         {
             // Animated mode
-            // qDebug() << "[onRun] Animated mode";
+            qDebug() << "[onRun] Animated mode";
             int delayMs = 1000 / speed;
 
             QTimer *stepTimer = new QTimer(this);
@@ -839,6 +819,50 @@ void MainWindow::onStop()
         clearLineHighlight();
     }
     // qDebug() << "[onStop] DONE";
+}
+
+void MainWindow::onUndo(){
+    // CodeEditor *editor = getCurrentEditor();
+    if(program.errorCount != 0 ){
+        return ;
+    }
+
+    if (vm)
+    {
+        vm->Undo(); // Undo last editing operation in the current editor.
+        updateRegisterTable();
+        highlightCurrentLine();
+        updateExecutionInfo();
+        refreshMemoryDisplay();
+        QCoreApplication::processEvents();
+    }
+}
+
+void MainWindow::onReset(){
+    if (!vm)
+        return;
+
+    // Reset the current VM to its initial state.
+    vm->RequestStop();
+    vm->Reset();
+
+    if (program.errorCount == 0) {
+        vm->LoadProgram(program);
+    }
+
+    // Update display panels to reflect VM reset.
+    updateRegisterTable();
+    updateExecutionInfo();
+    refreshMemoryDisplay();
+    clearLineHighlight();
+
+    // Optionally clear pipeline stage labels.
+    CodeEditor *editor = getCurrentEditor();
+    if (editor)
+    {
+        editor->clearPipelineLabels();
+        editor->setFocus(); // Bring focus back to editor.
+    }
 }
 
 void MainWindow::highlightCurrentLine()

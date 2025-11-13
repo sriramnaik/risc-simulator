@@ -38,6 +38,10 @@ private:
 
         bool reg_write = false, mem_read = false, mem_write = false;
         bool mem_to_reg = false, alu_src = false, branch = false, is_float = false;
+
+        // bool is_float = false;  // Add this
+        uint64_t reg3_value = 0;
+
     } id_ex_, id_ex_next_;
 
     struct EX_MEM {
@@ -50,6 +54,7 @@ private:
 
         uint64_t alu_result = 0, reg2_value = 0;
         bool branch_taken = false;
+         bool is_float = false;
         uint64_t branch_target = 0;
     } ex_mem_, ex_mem_next_;
 
@@ -59,7 +64,40 @@ private:
         bool reg_write = false, mem_to_reg = false;
         uint64_t alu_result = 0, mem_data = 0;
         uint64_t pc = 0;
+        bool is_float = false;
     } mem_wb_, mem_wb_next_;
+
+    struct PipelineStepDelta {
+        // PC state
+        uint64_t old_pc;
+        uint64_t new_pc;
+
+        // Pipeline register snapshots
+        IF_ID old_if_id;
+        ID_EX old_id_ex;
+        EX_MEM old_ex_mem;
+        MEM_WB old_mem_wb;
+
+        IF_ID new_if_id;
+        ID_EX new_id_ex;
+        EX_MEM new_ex_mem;
+        MEM_WB new_mem_wb;
+
+        // Register/memory changes (same as before)
+        std::vector<RegisterChange> register_changes;
+        std::vector<MemoryChange> memory_changes;
+
+        // Pipeline control state
+        bool old_stall;
+        bool new_stall;
+        bool old_pc_update_pending;
+        uint64_t old_pc_update_value;
+
+        // Statistics
+        uint64_t old_cycle;
+        uint64_t old_instructions_retired;
+        uint64_t old_stall_cycles;
+    };
 
     bool pc_update_pending_ = false;
     uint64_t pc_update_value_ = 0;
@@ -85,8 +123,9 @@ public:
     void DebugRun() override;
     void Step() override;
     void Undo() override;
-    void Redo() override;
+    // void Redo() override;
     void Reset() override;
+    std::stack<PipelineStepDelta> pipeline_undo_stack_;
 
     const IF_ID& getIfId() const { return if_id_; }
     const ID_EX& getIdEx() const { return id_ex_; }

@@ -89,6 +89,8 @@ private slots:
     void onStep();
     void onPause();
     void onStop();
+    void onUndo();
+    void onReset();
     void onPipelineStageChanged(uint64_t pc, QString stage);
 
     // void onRunSlow();
