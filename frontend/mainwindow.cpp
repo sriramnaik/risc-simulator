@@ -1077,6 +1077,8 @@ void MainWindow::showProcessorSelection()
                     vm->SetPipelineConfig(true, false,false,false);
                 } else if (lastName == "5-stage processor with static Branch prediction"){
                     vm->SetPipelineConfig(true,true,true,false);
+                } else if (lastName == "5-stage processor with dynamic 1-bit Branch prediction"){
+                    vm->SetPipelineConfig(true,true,false,true);
                 }
 
                 // You can call setup/refresh here if needed
@@ -1113,6 +1115,7 @@ void MainWindow::onPipelineStageChanged(uint64_t pc, QString stage)
 
     // CLEAR stage: remove label at correct line and for specific stage.
     if (stage.endsWith("_CLEAR")) {
+        // qDebug()  << " entered CLear and sourceLine: " << sourceLine;
         QString baseStage = stage.left(stage.indexOf("_CLEAR"));
         editor->setPipelineLabel(sourceLine, baseStage + "_CLEAR");
         return;
@@ -1122,3 +1125,4 @@ void MainWindow::onPipelineStageChanged(uint64_t pc, QString stage)
     editor->setPipelineLabel(sourceLine, stage);
     // qDebug() << "Pipeline label set at line" << sourceLine << ":" << stage;
 }
+

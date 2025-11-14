@@ -6,4 +6,7 @@ remain things
 pipeline problems: 
 	pipline stage representation error not showing not the correct line numbers.(solved but with last WB is shown) 
 
-ld is not working
+ld is not working (it is working i need to check more).
+sd is not working (need for checking them).
+
+instruction_retired (issue) not resolved.

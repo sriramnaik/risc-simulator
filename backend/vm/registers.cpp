@@ -115,7 +115,7 @@ void RegisterFile::Reset() {
 void RegisterFile::WriteGpr(size_t reg, uint64_t value) {
     if (reg >= NUM_GPR) throw std::out_of_range("Invalid GPR index");
     if (reg == 0) return;
-    std::cout << "[WRITEGPR] ISA: " << (current_isa == ISA::RV64 ? "RV64" : "RV32") << " Value: " << std::hex << value << std::endl;
+    // std::cout << "[WRITEGPR] ISA: " << (current_isa == ISA::RV64 ? "RV64" : "RV32") << " Value: " << std::hex << value << std::endl;
     if (current_isa == ISA::RV32)
         gpr_[reg] = value & 0xFFFFFFFF;
     else
@@ -125,7 +125,7 @@ void RegisterFile::WriteGpr(size_t reg, uint64_t value) {
 uint64_t RegisterFile::ReadGpr(size_t reg) const {
     if (reg >= NUM_GPR) throw std::out_of_range("Invalid GPR index");
     if (reg == 0) return 0;
-    std::cout << "[READGPR] ISA: " << (current_isa == ISA::RV64 ? "RV64" : "RV32") << " Value: " << std::hex << gpr_[reg] << std::endl;
+    // std::cout << "[READGPR] ISA: " << (current_isa == ISA::RV64 ? "RV64" : "RV32") << " Value: " << std::hex << gpr_[reg] << std::endl;
     if (current_isa == ISA::RV32)
         return gpr_[reg] & 0xFFFFFFFF;
     else

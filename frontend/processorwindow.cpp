@@ -25,6 +25,7 @@ ProcessorWindow::ProcessorWindow(QWidget *parent)
         "5-stage processor w/o hazard detection",
         "5-stage processor w/o forwarding unit",
         "5-stage processor with static Branch prediction",
+        "5-stage processor with dynamic 1-bit Branch prediction",
         "Single-cycle processor"
     });
 
@@ -98,6 +99,7 @@ void ProcessorWindow::onISAChanged(int index)
                               "5-stage processor w/o hazard detection",
                               "5-stage processor w/o forwarding unit",
                               "5-stage processor with static Branch prediction",
+                              "5-stage processor with dynamic 1-bit Branch prediction",
                               "Single-cycle processor"
                               });
     } else {
@@ -106,6 +108,7 @@ void ProcessorWindow::onISAChanged(int index)
                               "5-stage processor w/o hazard detection",
                               "5-stage processor w/o forwarding unit",
                               "5-stage processor with static Branch prediction",
+                              "5-stage processor with dynamic 1-bit Branch prediction",
                               "Single-cycle processor"
                               });
     }

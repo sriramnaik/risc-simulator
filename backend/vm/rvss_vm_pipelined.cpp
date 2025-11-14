@@ -29,6 +29,7 @@ void RVSSVMPipelined::Reset()
     pc_update_pending_ = false;
     pc_update_value_ = 0;
     stall_ = false;
+    flush_pipeline_ = false;
 
     program_counter_ = 0;
     if (program_size_ > 0)
@@ -41,55 +42,35 @@ void RVSSVMPipelined::Reset()
     branch_prediction_enabled_ = false;
     dynamic_branch_prediction_enabled_ = false;
 
+    // Clear undo stack
+    while (!pipeline_undo_stack_.empty())
+        pipeline_undo_stack_.pop();
 }
-
-// IF stage fetch with stall and PC update handling
-// void RVSSVMPipelined::IF_stage()
-// {
-//     if (stall_)
-//     {
-//         if_id_next_ = if_id_;
-//         return;
-//     }
-
-//     if (pc_update_pending_)
-//     {
-//         // On branch taken or jump, update PC and flush IF stage
-//         program_counter_ = pc_update_value_;
-//         pc_update_pending_ = false;
-//         pc_update_value_ = 0;
-
-//         if_id_next_.valid = false; // flush
-//         return;
-//     }
-
-//     if (program_counter_ >= program_size_)
-//     {
-//         if_id_next_.valid = false;
-//         return;
-//     }
-
-//     if_id_next_.pc = program_counter_;
-//     if_id_next_.instruction = memory_controller_.ReadWord(program_counter_);
-//     if_id_next_.valid = true;
-
-//     program_counter_ += 4;
-// }
 
 void RVSSVMPipelined::IF_stage()
 {
-    if (stall_)
-    {
-        if_id_next_ = if_id_;
-        return;
-    }
+    // qDebug() << "[IF-stage]: Instruction pc : " << program_counter_;
 
+    // ✅ FIX 1: Handle PC updates FIRST (highest priority)
     if (pc_update_pending_)
     {
         program_counter_ = pc_update_value_;
         pc_update_pending_ = false;
         pc_update_value_ = 0;
         if_id_next_.valid = false;  // flush IF
+        return;
+    }
+
+    // ✅ FIX 2: Handle flush properly with return
+    if (flush_pipeline_)
+    {
+        if_id_next_.valid = false;  // Insert NOP
+        return;  // Don't fetch when flushing
+    }
+
+    if (stall_)
+    {
+        if_id_next_ = if_id_;
         return;
     }
 
@@ -125,6 +106,14 @@ void RVSSVMPipelined::IF_stage()
 
 void RVSSVMPipelined::ID_stage()
 {
+    // qDebug() << "[ID-stage]: Instruction : " << Qt::hex << if_id_.instruction;
+
+    if (flush_pipeline_)
+    {
+        id_ex_next_ = ID_EX(); // Insert NOP
+        return;
+    }
+
     if (stall_)
     {
         id_ex_next_ = ID_EX(); // insert bubble
@@ -148,7 +137,7 @@ void RVSSVMPipelined::ID_stage()
     id_ex_next_.is_syscall = (opcode == static_cast<uint32_t>(ecall_encoding.opcode) &&
                               funct3 == static_cast<uint8_t>(ecall_encoding.funct3));
 
-    // **NEW: Detect floating-point instructions**
+    // Detect floating-point instructions
     bool is_float_instr = instruction_set::isFInstruction(instr);
     bool is_double_instr = instruction_set::isDInstruction(instr);
     id_ex_next_.is_float = is_float_instr || is_double_instr;
@@ -167,6 +156,7 @@ void RVSSVMPipelined::ID_stage()
         {
             bool ex_hazard = hazard_unit_.DetectEXHazard(id_ex_.rd, id_ex_.reg_write, curr_rs1, curr_rs2);
             bool mem_hazard = hazard_unit_.DetectMEMHazard(ex_mem_.rd, ex_mem_.reg_write, curr_rs1, curr_rs2);
+
             if (ex_hazard || mem_hazard)
                 should_stall = true;
         }
@@ -191,7 +181,7 @@ void RVSSVMPipelined::ID_stage()
     id_ex_next_.funct7 = (instr >> 25) & 0b1111111;
     id_ex_next_.imm = ImmGenerator(instr);
 
-    // **NEW: Read from FPR for floating-point instructions**
+    // Read from FPR for floating-point instructions
     if (is_float_instr || is_double_instr)
     {
         uint8_t funct7 = id_ex_next_.funct7;
@@ -226,7 +216,6 @@ void RVSSVMPipelined::ID_stage()
     id_ex_next_.branch = control_unit_.GetBranch();
 }
 
-// Modified EX_stage() to handle floating-point:
 void RVSSVMPipelined::EX_stage()
 {
     if (!id_ex_.valid)
@@ -245,7 +234,7 @@ void RVSSVMPipelined::EX_stage()
     ex_mem_next_.mem_to_reg = id_ex_.mem_to_reg;
     ex_mem_next_.is_float = id_ex_.is_float;
 
-    // **NEW: Handle floating-point instructions**
+    // Handle floating-point instructions
     if (id_ex_.is_float)
     {
         uint8_t opcode = id_ex_.instruction & 0x7F;
@@ -318,11 +307,12 @@ void RVSSVMPipelined::EX_stage()
         return;
     }
 
-    // Regular integer execution path continues here...
+    // Regular integer execution path
     uint64_t op1 = id_ex_.reg1_value;
     uint64_t op2 = id_ex_.reg2_value;
     uint64_t store_data = id_ex_.reg2_value;
 
+    // Apply forwarding for integer operands
     if (forwarding_enabled_)
     {
         auto rs1_src = forwarding_unit_.GetRs1Source(
@@ -340,10 +330,13 @@ void RVSSVMPipelined::EX_stage()
             mem_wb_.reg_write, mem_wb_.rd,
             id_ex_.rs2);
 
-        if (rs2_src == ForwardingUnit::ForwardingSource::FROM_EX_MEM){
+        if (rs2_src == ForwardingUnit::ForwardingSource::FROM_EX_MEM)
+        {
             op2 = ex_mem_.alu_result;
-            store_data = ex_mem_.alu_result;}
-        else if (rs2_src == ForwardingUnit::ForwardingSource::FROM_MEM_WB){
+            store_data = ex_mem_.alu_result;
+        }
+        else if (rs2_src == ForwardingUnit::ForwardingSource::FROM_MEM_WB)
+        {
             uint64_t fwd = mem_wb_.mem_to_reg ? mem_wb_.mem_data : mem_wb_.alu_result;
             op2 = fwd;
             store_data = fwd;
@@ -351,18 +344,24 @@ void RVSSVMPipelined::EX_stage()
     }
 
     uint8_t opcode = id_ex_.instruction & 0x7F;
-    if (opcode == 0b0110111) { // LUI
+
+    // Handle special instruction types
+    if (opcode == 0b0110111) // LUI
+    {
         op2 = static_cast<uint64_t>(id_ex_.imm) << 12;
         op1 = 0;
     }
-    else if (opcode == 0b0010111) { // AUIPC
+    else if (opcode == 0b0010111) // AUIPC
+    {
         op2 = static_cast<uint64_t>(id_ex_.imm) << 12;
         op1 = static_cast<uint64_t>(id_ex_.pc);
     }
-    else if (id_ex_.alu_src) {
+    else if (id_ex_.alu_src)
+    {
         op2 = static_cast<uint64_t>(static_cast<int64_t>(id_ex_.imm));
     }
 
+    // Execute ALU operation
     alu::AluOp aluOperation = control_unit_.GetAluSignal(id_ex_.instruction, control_unit_.GetAluOp());
     bool overflow = false;
     std::tie(ex_mem_next_.alu_result, overflow) = alu_.execute(aluOperation, op1, op2);
@@ -370,11 +369,13 @@ void RVSSVMPipelined::EX_stage()
     ex_mem_next_.reg2_value = store_data;
     ex_mem_next_.branch_taken = false;
 
-    // Branch handling code continues...
+    // Branch handling
     if (id_ex_.branch)
     {
         bool take = false;
         uint8_t funct3 = id_ex_.funct3;
+
+        // Determine if branch should be taken based on ALU result
         switch (funct3)
         {
         case 0b000: take = (ex_mem_next_.alu_result == 0); break; // BEQ
@@ -385,73 +386,101 @@ void RVSSVMPipelined::EX_stage()
         case 0b111: take = (ex_mem_next_.alu_result == 0); break; // BGEU
         }
 
-        if (take)
-        {
-            ex_mem_next_.branch_taken = true;
-            ex_mem_next_.branch_target = static_cast<uint64_t>(static_cast<int64_t>(id_ex_.pc)) + id_ex_.imm;
-            pc_update_pending_ = true;
-            pc_update_value_ = ex_mem_next_.branch_target;
-            if_id_next_.valid = false;
-            id_ex_next_.valid = false;
-        }
+        // Calculate branch target
+        uint64_t branch_target = static_cast<uint64_t>(static_cast<int64_t>(id_ex_.pc)) + id_ex_.imm;
 
         if (branch_prediction_enabled_)
         {
+            // ✅ FIX 3: Read prediction BEFORE updating BTB
             size_t index = (id_ex_.pc >> 2) % BHT_SIZE;
+            bool predicted_taken = false;
 
             if (dynamic_branch_prediction_enabled_)
             {
+                // Dynamic prediction using branch history table
+                predicted_taken = branch_history_table_[index];
                 bool actual_taken = take;
-                bool predicted_taken = branch_history_table_[index];
+
+                // Update BHT with actual outcome
                 branch_history_table_[index] = actual_taken;
 
+                // Update BTB
                 if (actual_taken)
-                    branch_target_buffer_[index] = ex_mem_next_.branch_target;
+                    branch_target_buffer_[index] = branch_target;
                 else
                     branch_target_buffer_[index] = 0;
 
+                // Check for misprediction
                 if (predicted_taken != actual_taken)
                 {
+                    // Misprediction detected - flush pipeline and correct PC
                     pc_update_pending_ = true;
-                    pc_update_value_ = actual_taken ? ex_mem_next_.branch_target : id_ex_.pc + 4;
-                    if_id_next_.valid = false;
-                    id_ex_next_.valid = false;
+                    pc_update_value_ = actual_taken ? branch_target : (id_ex_.pc + 4);
+                    flush_pipeline_ = true;
                 }
             }
             else
             {
+                // Static prediction - check BTB BEFORE updating
+                predicted_taken = (branch_target_buffer_[index] != 0);
+
+                // Now update BTB
                 if (take)
-                    branch_target_buffer_[index] = ex_mem_next_.branch_target;
+                    branch_target_buffer_[index] = branch_target;
                 else
                     branch_target_buffer_[index] = 0;
 
-                bool predicted_taken = (branch_target_buffer_[index] != 0);
-
+                // Check for misprediction
                 if (predicted_taken != take)
                 {
+                    // Misprediction detected - flush pipeline and correct PC
                     pc_update_pending_ = true;
-                    pc_update_value_ = take ? ex_mem_next_.branch_target : id_ex_.pc + 4;
-                    if_id_next_.valid = false;
-                    id_ex_next_.valid = false;
+                    pc_update_value_ = take ? branch_target : (id_ex_.pc + 4);
+                    flush_pipeline_ = true;
                 }
             }
         }
         else
         {
+            // Without branch prediction - always assume not taken
+            // If branch is actually taken, we need to flush and update PC
             if (take)
             {
+                ex_mem_next_.branch_taken = true;
+                ex_mem_next_.branch_target = branch_target;
+
+                // Update PC to branch target
                 pc_update_pending_ = true;
-                pc_update_value_ = ex_mem_next_.branch_target;
-                if_id_next_.valid = false;
-                id_ex_next_.valid = false;
+                pc_update_value_ = branch_target;
+                flush_pipeline_ = true;
             }
+            // If not taken, continue normally (no flush needed)
         }
+    }
+
+    // Handle JAL and JALR (unconditional jumps)
+    if (opcode == 0b1101111) // JAL
+    {
+        uint64_t jump_target = static_cast<uint64_t>(static_cast<int64_t>(id_ex_.pc)) + id_ex_.imm;
+        ex_mem_next_.alu_result = id_ex_.pc + 4; // Return address
+        pc_update_pending_ = true;
+        pc_update_value_ = jump_target;
+        flush_pipeline_ = true;
+    }
+    else if (opcode == 0b1100111) // JALR
+    {
+        uint64_t jump_target = (op1 + static_cast<int64_t>(id_ex_.imm)) & ~1ULL;
+        ex_mem_next_.alu_result = id_ex_.pc + 4; // Return address
+        pc_update_pending_ = true;
+        pc_update_value_ = jump_target;
+        flush_pipeline_ = true;
     }
 }
 
-// Modified MEM_stage() to handle floating-point loads/stores:
 void RVSSVMPipelined::MEM_stage()
 {
+    // qDebug() << "[MEM-stage]: Instruction : "<< Qt::hex << ex_mem_.instruction;
+
     if (!ex_mem_.valid)
     {
         mem_wb_next_.valid = false;
@@ -465,8 +494,9 @@ void RVSSVMPipelined::MEM_stage()
     mem_wb_next_.alu_result = ex_mem_.alu_result;
     mem_wb_next_.pc = ex_mem_.pc;
     mem_wb_next_.is_float = ex_mem_.is_float;
+    mem_wb_next_.instruction = ex_mem_.instruction;
 
-    // **NEW: Handle floating-point loads**
+    // Handle floating-point loads
     if (ex_mem_.mem_read)
     {
         uint8_t opcode = ex_mem_.instruction & 0x7F;
@@ -501,38 +531,6 @@ void RVSSVMPipelined::MEM_stage()
         }
     }
 
-    // **NEW: Handle floating-point stores**
-    // if (ex_mem_.mem_write)
-    // {
-    //     uint8_t opcode = ex_mem_.instruction & 0x7F;
-
-    //     if (opcode == 0b0100111) // Floating-point store (FSW/FSD)
-    //     {
-    //         uint8_t funct3 = (ex_mem_.instruction >> 12) & 0b111;
-    //         if (funct3 == 0b010) // FSW
-    //         {
-    //             memory_controller_.WriteWord(ex_mem_.alu_result, ex_mem_.reg2_value & 0xFFFFFFFF);
-    //         }
-    //         else if (funct3 == 0b011) // FSD
-    //         {
-    //             if (registers_->GetIsa() == ISA::RV64)
-    //                 memory_controller_.WriteDoubleWord(ex_mem_.alu_result, ex_mem_.reg2_value);
-    //         }
-    //     }
-    //     else // Integer stores
-    //     {
-    //         uint8_t funct3 = (ex_mem_.instruction >> 12) & 0b111;
-    //         switch (funct3)
-    //         {
-    //         case 0b000: memory_controller_.WriteByte(ex_mem_.alu_result, ex_mem_.reg2_value & 0xFF); break;
-    //         case 0b001: memory_controller_.WriteHalfWord(ex_mem_.alu_result, ex_mem_.reg2_value & 0xFFFF); break;
-    //         case 0b010: memory_controller_.WriteWord(ex_mem_.alu_result, ex_mem_.reg2_value & 0xFFFFFFFF); break;
-    //         case 0b011: memory_controller_.WriteDoubleWord(ex_mem_.alu_result, ex_mem_.reg2_value); break;
-    //         default: break;
-    //         }
-    //     }
-    // }
-
     if (ex_mem_.mem_write)
     {
         uint8_t opcode = ex_mem_.instruction & 0x7F;
@@ -564,13 +562,13 @@ void RVSSVMPipelined::MEM_stage()
                 current_delta_.memory_changes.push_back(mem_change);
             }
 
-            // Now do the actual write
+            // Actual write
             if (funct3 == 0b010)
                 memory_controller_.WriteWord(ex_mem_.alu_result, ex_mem_.reg2_value & 0xFFFFFFFF);
             else if (funct3 == 0b011 && registers_->GetIsa() == ISA::RV64)
                 memory_controller_.WriteDoubleWord(ex_mem_.alu_result, ex_mem_.reg2_value);
         }
-        else // Integer stores - add similar recording
+        else // Integer stores
         {
             uint8_t funct3 = (ex_mem_.instruction >> 12) & 0b111;
 
@@ -613,6 +611,8 @@ void RVSSVMPipelined::MEM_stage()
                             mem_change.new_bytes_vec.push_back((new_val >> (i * 8)) & 0xFF);
                     }
                     break;
+                default:
+                    break; // Handle invalid funct3
                 }
                 current_delta_.memory_changes.push_back(mem_change);
             }
@@ -622,66 +622,42 @@ void RVSSVMPipelined::MEM_stage()
             case 0b000: memory_controller_.WriteByte(ex_mem_.alu_result, ex_mem_.reg2_value & 0xFF); break;
             case 0b001: memory_controller_.WriteHalfWord(ex_mem_.alu_result, ex_mem_.reg2_value & 0xFFFF); break;
             case 0b010: memory_controller_.WriteWord(ex_mem_.alu_result, ex_mem_.reg2_value & 0xFFFFFFFF); break;
-            case 0b011: memory_controller_.WriteDoubleWord(ex_mem_.alu_result, ex_mem_.reg2_value); break;
+            case 0b011:
+                if (registers_->GetIsa() == ISA::RV64)
+                    memory_controller_.WriteDoubleWord(ex_mem_.alu_result, ex_mem_.reg2_value);
+                break;
+            default:
+                break; // Handle invalid funct3
             }
         }
     }
 }
 
-// Modified WB_stage() to handle floating-point writeback:
-// void RVSSVMPipelined::WB_stage()
-// {
-//     if (!mem_wb_.valid)
-//         return;
-
-//     uint64_t write_val = mem_wb_.mem_to_reg ? mem_wb_.mem_data : mem_wb_.alu_result;
-
-//     if (mem_wb_.reg_write && mem_wb_.rd != 0)
-//     {
-//         // **NEW: Write to FPR for floating-point instructions**
-//         if (mem_wb_.is_float)
-//         {
-//             uint64_t value = write_val;
-//             if (registers_->GetIsa() == ISA::RV32)
-//                 value &= 0xFFFFFFFF;
-//             registers_->WriteFpr(mem_wb_.rd, value);
-//             emit fprUpdated(mem_wb_.rd, value);
-//         }
-//         else
-//         {
-//             registers_->WriteGpr(mem_wb_.rd, write_val);
-//             emit gprUpdated(mem_wb_.rd, write_val);
-//         }
-//     }
-
-//     instructions_retired_++;
-// }
-
 void RVSSVMPipelined::WB_stage()
 {
-    if (!mem_wb_.valid)
+    // qDebug() << "[WB-stage]: Instruction : "<< Qt::hex << mem_wb_.instruction << "valid : " << mem_wb_.valid;
+
+    if (!mem_wb_.valid){
+        // qDebug() << "WB stage: NOP (invalid)";
         return;
+    }
 
     uint64_t write_val = mem_wb_.mem_to_reg ? mem_wb_.mem_data : mem_wb_.alu_result;
 
     if (mem_wb_.reg_write && mem_wb_.rd != 0)
     {
-        if (recording_enabled_) {
-            RegisterChange change;
-            change.reg_index = mem_wb_.rd;
-
-            if (mem_wb_.is_float) {
-                change.reg_type = 2; // FPR
-                change.old_value = registers_->ReadFpr(mem_wb_.rd);
-                change.new_value = (registers_->GetIsa() == ISA::RV32) ? (write_val & 0xFFFFFFFF) : write_val;
-            } else {
-                change.reg_type = 0; // GPR
-                change.old_value = registers_->ReadGpr(mem_wb_.rd);
-                change.new_value = write_val;
-            }
-            current_delta_.register_changes.push_back(change);
+        // Record register changes for undo
+        if (recording_enabled_)
+        {
+            RegisterChange reg_change;
+            reg_change.reg_type = mem_wb_.is_float ? 2 : 0; // 2 = FPR, 0 = GPR
+            reg_change.reg_index = mem_wb_.rd;
+            reg_change.old_value = mem_wb_.is_float ? registers_->ReadFpr(mem_wb_.rd) : registers_->ReadGpr(mem_wb_.rd);
+            reg_change.new_value = write_val;
+            current_delta_.register_changes.push_back(reg_change);
         }
 
+        // Write to FPR for floating-point instructions
         if (mem_wb_.is_float)
         {
             uint64_t value = write_val;
@@ -700,7 +676,6 @@ void RVSSVMPipelined::WB_stage()
     instructions_retired_++;
 }
 
-// Advance pipeline registers with event emission
 void RVSSVMPipelined::advance_pipeline_registers()
 {
     mem_wb_ = mem_wb_next_;
@@ -713,11 +688,18 @@ void RVSSVMPipelined::advance_pipeline_registers()
     id_ex_next_ = ID_EX();
     if_id_next_ = IF_ID();
     stall_ = false;
+    flush_pipeline_ = false;
 
-    if (mem_wb_.valid)
+    // Emit pipeline stage changes for visualization
+    // qDebug() << "valid :" << mem_wb_.valid;
+    if (mem_wb_.valid == true){
+        // qDebug() <<  "emiting";
         emit pipelineStageChanged(mem_wb_.pc, "WB");
-    else
+    }
+    else{
+        qDebug() << "clear";
         emit pipelineStageChanged(0, "WB_CLEAR");
+    }
 
     if (ex_mem_.valid)
         emit pipelineStageChanged(ex_mem_.pc, "MEM");
@@ -740,7 +722,6 @@ void RVSSVMPipelined::advance_pipeline_registers()
         emit pipelineStageChanged(0, "IF_CLEAR");
 }
 
-// Run loop to cycle pipeline until completion or stop requested
 void RVSSVMPipelined::Run()
 {
     while (!stop_requested_)
@@ -767,53 +748,10 @@ bool RVSSVMPipelined::IsPipelineEmpty() const
     return !(if_id_.valid || id_ex_.valid || ex_mem_.valid || mem_wb_.valid);
 }
 
-
 void RVSSVMPipelined::DebugRun()
 {
     Run();
 }
-
-// void RVSSVMPipelined::Step()
-// {
-//     // IF_stage();
-//     // ID_stage();
-//     // EX_stage();
-//     // MEM_stage();
-//     // WB_stage();
-//     // advance_pipeline_registers();
-//     // cycle_s_++;
-//     bool pipeline_has_work = (if_id_.valid || id_ex_.valid || ex_mem_.valid || mem_wb_.valid);
-//     bool fetch_remaining = (program_counter_ < program_size_);
-
-//     // If no more work and no more instructions left to fetch, stop
-//     // std::cout << "[CYCLE] Pipeline has work: " << pipeline_has_work
-//     //           << " (IF:" << if_id_.valid << " ID:" << id_ex_.valid
-//     //           << " EX:" << ex_mem_.valid << " MEM:" << mem_wb_.valid << ")" << std::endl;
-//     // std::cout << "[CYCLE] Fetch remaining: " << fetch_remaining
-//     //           << " (PC=" << program_counter_ << ", size=" << program_size_ << ")" << std::endl;
-
-//     if (!pipeline_has_work && !fetch_remaining)
-//     {
-//         output_status_ = "VM_PROGRAM_END";
-//         emit pipelineStageChanged(0, "IF_CLEAR");
-//         emit pipelineStageChanged(0, "ID_CLEAR");
-//         emit pipelineStageChanged(0, "EX_CLEAR");
-//         emit pipelineStageChanged(0, "MEM_CLEAR");
-//         emit pipelineStageChanged(0, "WB_CLEAR");
-//         return;
-//     }
-
-//     // Normal pipeline cycle
-//     WB_stage();
-//     MEM_stage();
-//     EX_stage();
-//     ID_stage();
-//     IF_stage();
-//     advance_pipeline_registers();
-
-//     cycle_s_++;
-//     // DumpPipelineState();
-// }
 
 void RVSSVMPipelined::Step()
 {
@@ -871,6 +809,26 @@ void RVSSVMPipelined::Step()
     delta.new_stall = stall_;
     delta.register_changes = current_delta_.register_changes;
     delta.memory_changes = current_delta_.memory_changes;
+
+    // ✅ FIX 4: Limit undo stack size to prevent memory issues
+    const size_t MAX_UNDO_STACK_SIZE = 10000;
+    if (pipeline_undo_stack_.size() >= MAX_UNDO_STACK_SIZE)
+    {
+        // Remove oldest entry (bottom of stack)
+        std::stack<PipelineStepDelta> temp_stack;
+        while (pipeline_undo_stack_.size() > 1)
+        {
+            temp_stack.push(pipeline_undo_stack_.top());
+            pipeline_undo_stack_.pop();
+        }
+        pipeline_undo_stack_.pop(); // Remove the oldest
+
+        while (!temp_stack.empty())
+        {
+            pipeline_undo_stack_.push(temp_stack.top());
+            temp_stack.pop();
+        }
+    }
 
     // Push to undo stack
     pipeline_undo_stack_.push(delta);
@@ -939,39 +897,37 @@ void RVSSVMPipelined::Undo()
     instructions_retired_ = last.old_instructions_retired;
     stall_cycles_ = last.old_stall_cycles;
 
-    // Emit pipeline stage updates to UI
-    if (if_id_.valid)
-        emit pipelineStageChanged(if_id_.pc, "ID");
+    // Emit pipeline stage changes
+    if (mem_wb_.valid)
+        emit pipelineStageChanged(mem_wb_.pc, "WB");
     else
-        emit pipelineStageChanged(0, "ID_CLEAR");
-
-    if (id_ex_.valid)
-        emit pipelineStageChanged(id_ex_.pc, "EX");
-    else
-        emit pipelineStageChanged(0, "EX_CLEAR");
+        emit pipelineStageChanged(0, "WB_CLEAR");
 
     if (ex_mem_.valid)
         emit pipelineStageChanged(ex_mem_.pc, "MEM");
     else
         emit pipelineStageChanged(0, "MEM_CLEAR");
 
-    if (mem_wb_.valid)
-        emit pipelineStageChanged(mem_wb_.pc, "WB");
+    if (id_ex_.valid)
+        emit pipelineStageChanged(id_ex_.pc, "EX");
     else
-        emit pipelineStageChanged(0, "WB_CLEAR");
+        emit pipelineStageChanged(0, "EX_CLEAR");
+
+    if (if_id_.valid)
+        emit pipelineStageChanged(if_id_.pc, "ID");
+    else
+        emit pipelineStageChanged(0, "ID_CLEAR");
 
     if (program_counter_ < program_size_)
         emit pipelineStageChanged(program_counter_, "IF");
     else
         emit pipelineStageChanged(0, "IF_CLEAR");
-
-    qDebug() << "Undo completed - PC restored to" << program_counter_;
 }
 
 void RVSSVMPipelined::SetPipelineConfig(bool hazardEnabled,
                                         bool forwardingEnabled,
                                         bool branchPredictionEnabled,
-                                        bool dynamicPredictionEnabled = false)
+                                        bool dynamicPredictionEnabled)
 {
     hazard_detection_enabled_ = hazardEnabled;
     forwarding_enabled_ = forwardingEnabled;
@@ -986,5 +942,3 @@ void RVSSVMPipelined::SetPipelineConfig(bool hazardEnabled,
             branch_history_table_.assign(BHT_SIZE, true);
     }
 }
-
-

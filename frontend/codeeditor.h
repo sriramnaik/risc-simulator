@@ -26,6 +26,7 @@ public:
     void highlightLineForStage(const QString &stage, int sourceLine);
     void updateHighlights();
     void clearHighlightForStage(const QString &stage);
+    QMap<uint64_t, QString> pipelineLabels;
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
@@ -38,7 +39,6 @@ private slots:
 private:
     QWidget *lineNumberArea;
     void paintPipelineStages(QPainter &painter, const QRect &rect);
-    QMap<uint64_t, QString> pipelineLabels;
 
 };
 

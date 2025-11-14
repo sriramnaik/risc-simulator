@@ -65,6 +65,7 @@ private:
         uint64_t alu_result = 0, mem_data = 0;
         uint64_t pc = 0;
         bool is_float = false;
+        uint32_t instruction = 0;
     } mem_wb_, mem_wb_next_;
 
     struct PipelineStepDelta {
@@ -150,6 +151,7 @@ public:
 
     HazardDetectionUnit hazard_unit_;
     bool stall_ = false; // when true, IF/ID is frozen and ID/EX gets a bubble
+    bool flush_pipeline_;
 
     void DumpPipelineState();
     void SetPipelineConfig(bool hazardEnabled,

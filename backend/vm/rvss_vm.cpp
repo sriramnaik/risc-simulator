@@ -312,17 +312,6 @@ void RVSSVM::WriteMemory()
     }
 }
 
-// void RVSSVM::WriteMemoryFloat()
-// {
-//     uint8_t rs2 = (current_instruction_ >> 20) & 0b11111;
-//     if (control_unit_.GetMemRead())
-//         memory_result_ = memory_controller_.ReadWord(execution_result_);
-
-//     if (control_unit_.GetMemWrite()) {
-//         uint32_t val = registers_->ReadFpr(rs2) & 0xFFFFFFFF;
-//         memory_controller_.WriteWord(execution_result_, val);
-//     }
-// }
 void RVSSVM::WriteMemoryFloat()
 {
     uint8_t rs2 = (current_instruction_ >> 20) & 0b11111;
@@ -347,19 +336,6 @@ void RVSSVM::WriteMemoryFloat()
     }
 }
 
-// void RVSSVM::WriteMemoryDouble()
-// {
-//     if (registers_->GetIsa() != ISA::RV64) {
-//         emit vmError("Double-precision store/read not supported in RV32");
-//         return;
-//     }
-//     uint8_t rs2 = (current_instruction_ >> 20) & 0b11111;
-//     if (control_unit_.GetMemRead())
-//         memory_result_ = memory_controller_.ReadDoubleWord(execution_result_);
-
-//     if (control_unit_.GetMemWrite())
-//         memory_controller_.WriteDoubleWord(execution_result_, registers_->ReadFpr(rs2));
-// }
 
 void RVSSVM::WriteMemoryDouble()
 {
@@ -497,58 +473,6 @@ void RVSSVM::WriteBackDouble()
         emit fprUpdated(rd, execution_result_);
     }
 }
-
-// void RVSSVM::WriteBackCsr()
-// {
-//     uint8_t rd = (current_instruction_ >> 7) & 0b11111;
-//     uint8_t funct3 = (current_instruction_ >> 12) & 0b111;
-//     uint16_t csr_addr = csr_target_address_;
-//     switch (funct3)
-//     {
-//     case 0b001: // CSRRW
-//         registers_->WriteGpr(rd, csr_old_value_);
-//         registers_->WriteCsr(csr_addr, csr_write_val_);
-//         emit csrUpdated(csr_addr, csr_write_val_);
-//         break;
-//     case 0b010: // CSRRS
-//         registers_->WriteGpr(rd, csr_old_value_);
-//         if (csr_write_val_ != 0)
-//         {
-//             registers_->WriteCsr(csr_addr, csr_old_value_ | csr_write_val_);
-//             emit csrUpdated(csr_addr, csr_old_value_ | csr_write_val_);
-//         }
-//         break;
-//     case 0b011: // CSRRC
-//         registers_->WriteGpr(rd, csr_old_value_);
-//         if (csr_write_val_ != 0)
-//         {
-//             registers_->WriteCsr(csr_addr, csr_old_value_ & ~csr_write_val_);
-//             emit csrUpdated(csr_addr, csr_old_value_ & ~csr_write_val_);
-//         }
-//         break;
-//     case 0b101: // CSRRWI
-//         registers_->WriteGpr(rd, csr_old_value_);
-//         registers_->WriteCsr(csr_addr, csr_uimm_);
-//         emit csrUpdated(csr_addr, csr_uimm_);
-//         break;
-//     case 0b110: // CSRRSI
-//         registers_->WriteGpr(rd, csr_old_value_);
-//         if (csr_uimm_ != 0)
-//         {
-//             registers_->WriteCsr(csr_addr, csr_old_value_ | csr_uimm_);
-//             emit csrUpdated(csr_addr, csr_old_value_ | csr_uimm_);
-//         }
-//         break;
-//     case 0b111: // CSRRCI
-//         registers_->WriteGpr(rd, csr_old_value_);
-//         if (csr_uimm_ != 0)
-//         {
-//             registers_->WriteCsr(csr_addr, csr_old_value_ & ~csr_uimm_);
-//             emit csrUpdated(csr_addr, csr_old_value_ & ~csr_uimm_);
-//         }
-//         break;
-//     }
-// }
 
 void RVSSVM::WriteBackCsr()
 {
@@ -695,29 +619,6 @@ void RVSSVM::DebugRun()
     if (program_counter_ >= program_size_)
         emit statusChanged("VM_PROGRAM_END");
 }
-
-// void RVSSVM::Step()
-// {
-//     current_delta_.old_pc = program_counter_;
-//     if (program_counter_ < program_size_)
-//     {
-//         Fetch();
-//         Decode();
-//         Execute();
-//         WriteMemory();
-//         WriteBack();
-//         instructions_retired_++;
-//         cycle_s_++;
-//         current_delta_.new_pc = program_counter_;
-//         undo_stack_.push(current_delta_);
-//         while (!redo_stack_.empty())
-//             redo_stack_.pop();
-//         current_delta_ = StepDelta();
-
-//         DumpRegisters(globals::registers_dump_file_path,*registers_);
-//         qDebug() << "Dump Registers is finished";
-//     }
-// }
 
 void RVSSVM::Step()
 {

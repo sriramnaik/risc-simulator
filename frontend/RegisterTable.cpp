@@ -194,9 +194,9 @@ QString RegisterTable::formatValue(quint64 value) const
     {
     case DisplayType::Hex:
     {
-        QString hex = QString("%1").arg(static_cast<quint64>(value), 16, 16, QLatin1Char('0'));
+        QString hex = QString("%1").arg(value, 16, 16, QLatin1Char('0'));
         QString grouped;
-        // qDebug() << "[formatValue] HEX=" << hex;
+
         for (int i = 0; i < hex.length(); ++i)
         {
             if (i > 0 && i % 4 == 0)
@@ -205,29 +205,33 @@ QString RegisterTable::formatValue(quint64 value) const
         }
         return "  0x " + grouped.toUpper();
     }
+
     case DisplayType::Unsigned:
-        return QString(" %1").arg(static_cast<quint64>(value));
+        return QString(" %1").arg(value);
+
     case DisplayType::Signed:
-    {
-        qint64 signedValue = static_cast<qint64>(static_cast<qint64>(value));
-        return QString(" %1").arg(signedValue);
-    }
+        return QString(" %1").arg(static_cast<qint64>(value));
+
     case DisplayType::Float:
     {
-        float floatValue;
-        std::memcpy(&floatValue, &value, sizeof(float));
-        return QString(" %1").arg(floatValue, 0, 'f', 6);
+        float f;
+        quint32 lo = static_cast<quint32>(value);    // take lower 32 bits
+        memcpy(&f, &lo, sizeof(f));
+        return QString(" %1").arg(f, 0, 'f', 6);
     }
+
     case DisplayType::Double:
     {
-        float floatValue;
-        std::memcpy(&floatValue, &value, sizeof(float));
-        return QString(" %1").arg(static_cast<double>(floatValue), 0, 'f', 6);
+        double d;
+        memcpy(&d, &value, sizeof(d));   // copy full 8 bytes correctly
+        return QString(" %1").arg(d, 0, 'f', 6);
     }
+
     default:
-        return QString(" 0x%1").arg(static_cast<quint64>(value), 16, 16, QLatin1Char('0'));
+        return QString(" 0x%1").arg(value, 16, 16, QLatin1Char('0'));
     }
 }
+
 
 void RegisterTable::applyAlternatingRowColor(int index)
 {
