@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QTabWidget>
 #include <QComboBox>
+#include <qstackedwidget.h>
 #include "registertable.h"
 #include "controlstatustable.h"
 #include "../../backend/vm/registers.h"
@@ -23,14 +24,16 @@ public:
     void setregisterBitWidth(int val) { registerBitWidth = val ;}
 
 private slots:
-    void onDisplayTypeChanged(int index);
+    // void onDisplayTypeChanged(int index);
 
 private:
     QTabWidget *tabs;
     RegisterTable *intRegs;
     RegisterTable *floatRegs;
     ControlStatusTable *csrTable;
-    QComboBox *displayTypeCombo;
+    QComboBox *intDisplayTypeCombo;
+    QComboBox *floatDisplayTypeCombo;
+
     RegisterFile *backendRegisterFile;
     int registerBitWidth = 64;
 

@@ -24,6 +24,9 @@ set(FRONTEND_SOURCES
 # Create frontend static library
 add_library(frontend STATIC ${FRONTEND_SOURCES}
     processorwindow.h processorwindow.cpp
+    VMExecutionThread.h
+    VMExecutionThread.h
+    VMExecutionThread.cpp
 )
 
 # Link Qt Widgets and backend

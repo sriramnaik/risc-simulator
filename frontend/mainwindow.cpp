@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "VMExecutionThread.h"
 #include "codeeditor.h"
 #include "registerpanel.h"
 #include "bottompanel.h"
@@ -217,11 +218,6 @@ MainWindow::MainWindow(QWidget *parent)
     statusBar->addPermanentWidget(processorInfoLabel);
     setStatusBar(statusBar);
 
-    // --- Initialize backend ---
-    // qDebug() << "[MainWindow] Initializing backend components";
-    // qDebug() << "[MainWindow] registerPanel =" << registerPanel;
-    // qDebug() << "[MainWindow] registerPanel->getRegisterFile() =" << registerPanel->getRegisterFile();
-
     assembler = new Assembler(registerPanel->getRegisterFile(), this);
     singleCycleVm = new RVSSVM(registerPanel->getRegisterFile(), this);
     pipelinedVm = new RVSSVMPipelined(registerPanel->getRegisterFile(),this);
@@ -229,19 +225,26 @@ MainWindow::MainWindow(QWidget *parent)
     errorconsole = bottomPanel->getConsole();
     DataSegment *dataSegment = bottomPanel->getDataSegment();
 
-    // qDebug() << "[MainWindow] assembler =" << assembler;
-    // qDebug() << "[MainWindow] vm =" << vm;
-    // qDebug() << "[MainWindow] errorconsole =" << errorconsole;
-
     if (assembler && errorconsole)
     {
         connect(assembler, &Assembler::errorsAvailable,
                 errorconsole, &ErrorConsole::addMessages);
-        // qDebug() << "[MainWindow] Connected assembler to error console";
     }
 
-    // Connect VM signals with SAFETY CHECKS
-    // qDebug() << "[MainWindow] Connecting VM signals";
+    executionThread_ = new VMExecutionThread(vm, this);
+
+    connect(executionThread_, &VMExecutionThread::executionFinished,
+            this, &MainWindow::onExecutionFinished);
+
+    connect(executionThread_, &VMExecutionThread::executionError,
+            this, &MainWindow::onExecutionError);
+
+    connect(executionThread_, &VMExecutionThread::stepCompleted,
+            this, &MainWindow::onPeriodicUpdate);
+
+    // Create update timer for GUI refresh during execution
+    updateTimer_ = new QTimer(this);
+    connect(updateTimer_, &QTimer::timeout, this, &MainWindow::onPeriodicUpdate);
 
     connect(vm, &RVSSVM::gprUpdated, this, [this, dataSegment](int index, quint64 value)
             {
@@ -359,10 +362,10 @@ MainWindow::MainWindow(QWidget *parent)
     // qDebug() << "[MainWindow] Constructor COMPLETE";
 }
 
-MainWindow::~MainWindow()
-{
-    // qDebug() << "[MainWindow] Destructor";
-}
+// MainWindow::~MainWindow()
+// {
+//     // qDebug() << "[MainWindow] Destructor";
+// }
 
 CodeEditor *MainWindow::getCurrentEditor()
 {
@@ -596,13 +599,19 @@ void MainWindow::onSaveAsFile()
 
 void MainWindow::onAssemble()
 {
-    // qDebug() << "[onAssemble] START";
     CodeEditor *editor = getCurrentEditor();
 
     if (!editor)
     {
         QMessageBox::warning(this, "Warning", "No file is open!");
         return;
+    }
+
+    // ✅ STOP any running execution before assembling
+    if (executionThread_ && executionThread_->isRunning()) {
+        executionThread_->requestStop();
+        executionThread_->wait(2000);
+        updateTimer_->stop();
     }
 
     QString filePath = getCurrentFilePath();
@@ -612,7 +621,8 @@ void MainWindow::onAssemble()
         return;
     }
 
-    if (currentTabIndex >= 0 && currentTabIndex < fileTabs.size() && fileTabs[currentTabIndex].isModified)
+    if (currentTabIndex >= 0 && currentTabIndex < fileTabs.size() &&
+        fileTabs[currentTabIndex].isModified)
     {
         bool saved = saveToFile(currentTabIndex, filePath);
         if (!saved)
@@ -626,34 +636,30 @@ void MainWindow::onAssemble()
     }
 
     if (editor) {
-        // editor->clearLineHighlight();    // remove old highlights
-        editor->clearPipelineLabels();   // remove old pipeline stage text
+        editor->clearPipelineLabels();
     }
+
     std::string cppFilePath = filePath.toStdString();
     std::string startMsg = "Assemble: assembling " + cppFilePath;
     errorconsole->addMessages({startMsg});
-    editor->clearPipelineLabels();
 
-    // qDebug() << "[onAssemble] Running assembler";
     program = assembler->assemble(cppFilePath);
-    // vm->LoadProgram(program);
-
 
     if (program.errorCount == 0)
     {
         std::string successMsg = "Assemble: operation completed successfully.";
         errorconsole->addMessages({successMsg});
 
+        // ✅ Reset VM and load new program
         vm->Reset();
         vm->LoadProgram(program);
 
         uint64_t dataSegmentBase = 0x10000000;
-        size_t memorySize = 512; // 512 byte
+        size_t memorySize = 512;
 
         DataSegment *dataSegment = bottomPanel->getDataSegment();
         std::vector<uint8_t> memoryBytes = vm->GetMemoryRange(dataSegmentBase, memorySize);
 
-        // Convert bytes to words for display
         QVector<quint64> memoryWords;
         for (size_t i = 0; i < memoryBytes.size(); i += 4)
         {
@@ -665,119 +671,129 @@ void MainWindow::onAssemble()
             memoryWords.append(word);
         }
 
-        // Set memory starting at data segment base address
         dataSegment->clearData();
         dataSegment->setMemory(memoryWords, 0x10000000);
+
+        // ✅ Update all displays
         updateRegisterTable();
         updateExecutionInfo();
         highlightCurrentLine();
-        // RVSSVMPipelined *pipeVm = qobject_cast<RVSSVMPipelined *>(vm);
-        // qDebug() << pipelinedVm;
-
     }
     else {
         bottomPanel->changeTab();
     }
-
-    // qDebug() << "[onAssemble] Updating register table";
-    // qDebug() << "[onAssemble] DONE";
 }
 
 void MainWindow::onRun()
 {
-    // qDebug() << "[onRun] START";
     CodeEditor *editor = getCurrentEditor();
-    if (!editor)
-    {
-        // qDebug() << "[onRun] No editor";
+    if (!editor) {
         QMessageBox::warning(this, "Warning", "No file is open!");
         return;
     }
 
-    if (!vm)
-    {
-        // qDebug() << "[onRun] VM is null!";
+    if (!vm) {
         QMessageBox::critical(this, "Error", "VM not initialized!");
         return;
     }
 
-    if (program.errorCount != 0)
-    {
-        // qDebug() << "[onRun] Assembly errors:" << program.errorCount;
-        QMessageBox::warning(this, "Assembly Error", "Please fix assembly errors before running.");
+    if (program.errorCount != 0) {
+        QMessageBox::warning(this, "Assembly Error",
+                             "Please fix assembly errors before running.");
+        return;
+    }
+
+    if (executionThread_ && executionThread_->isRunning()) {
+        QMessageBox::information(this, "Info", "Execution already in progress!");
         return;
     }
 
     onReset();
     vm->stop_requested_ = false;
-    // vm->program_counter_ = 0;
 
-    try
-    {
-        vm->blockSignals(true);
+    int speed = executionSpeedSlider->value();
+
+    // ✅ DEBUG: Check VM type and initial state
+    RVSSVMPipelined *pipeVm = qobject_cast<RVSSVMPipelined *>(vm);
+    qDebug() << "========= EXECUTION START =========";
+    qDebug() << "VM Type:" << (pipeVm ? "PIPELINED" : "SINGLE-CYCLE");
+    qDebug() << "Program Size:" << vm->GetProgramSize();
+    qDebug() << "Initial PC:" << vm->GetProgramCounter();
+    qDebug() << "Pipeline Empty:" << vm->IsPipelineEmpty();
+    qDebug() << "===================================";
+
+    if (speed > 30) {
+        // === FAST MODE: Run in background thread ===
+        executionThread_->setVM(vm);
+        executionThread_->setMaxInstructions(10000000);
+
         editor->clearPipelineLabels();
-
-        // qDebug() << "[onRun] clearLineHighlight";
         clearLineHighlight();
         updateExecutionInfo();
-        // qDebug() << "[onRun] Unblocking VM signals";
-        vm->blockSignals(false);
 
-        int speed = executionSpeedSlider->value();
-        // qDebug() << "[onRun] Speed =" << speed;
+        executionThread_->start();
+        updateTimer_->start(100);
 
-        if (speed > 30)
-        {
-            vm->Run();
+        statusBar()->showMessage("Running in background...", 0);
+
+    } else {
+        // === ANIMATED MODE: Step-by-step with timer ===
+        editor->clearPipelineLabels();
+        clearLineHighlight();
+        updateExecutionInfo();
+
+        int delayMs = 1000 / speed;
+        QTimer *stepTimer = new QTimer(this);
+
+        // ✅ DEBUG counter
+        int stepCount = 0;
+
+        connect(stepTimer, &QTimer::timeout, this, [this, stepTimer, &stepCount, pipeVm]() {
+            stepCount++;
+
+            uint64_t pc = vm->GetProgramCounter();
+            uint64_t progSize = vm->GetProgramSize();
+            bool pipeEmpty = vm->IsPipelineEmpty();
+            bool stopReq = vm->IsStopRequested();
+
+            // ✅ DEBUG: Print every 10 steps or near end
+            if (stepCount % 10 == 0 || pc >= progSize) {
+                qDebug() << "Step" << stepCount
+                         << "| PC:" << pc
+                         << "/ Size:" << progSize
+                         << "| Pipeline Empty:" << pipeEmpty
+                         << "| Stop Req:" << stopReq
+                         << "| Instr Retired:" << vm->instructions_retired_;
+            }
+
+            if ((pc >= progSize && pipeEmpty) || stopReq) {
+                qDebug() << "========= EXECUTION END =========";
+                qDebug() << "Reason:" << (stopReq ? "STOP REQUESTED" : "PROGRAM END");
+                qDebug() << "Final PC:" << pc;
+                qDebug() << "Pipeline Empty:" << pipeEmpty;
+                qDebug() << "Total Steps:" << stepCount;
+                qDebug() << "=================================";
+
+                stepTimer->stop();
+                stepTimer->deleteLater();
+
+                updateExecutionInfo();
+                refreshMemoryDisplay();
+
+                QString msg = QString("Execution finished!\nInstructions: %1\nCycles: %2")
+                                  .arg(vm->instructions_retired_)
+                                  .arg(vm->cycle_s_);
+                QMessageBox::information(this, "Complete", msg);
+                return;
+            }
+
+            vm->Step();
             updateRegisterTable();
             highlightCurrentLine();
             updateExecutionInfo();
-            refreshMemoryDisplay();
+        });
 
-            QString msg = QString("Execution finished!\nInstructions: %1\nCycles: %2")
-                              .arg(vm->instructions_retired_)
-                              .arg(vm->cycle_s_);
-            QMessageBox::information(this, "Complete", msg);
-            // qDebug() << "[onRun] DONE (fast mode)";
-        }
-        else
-        {
-            // Animated mode
-            qDebug() << "[onRun] Animated mode";
-            int delayMs = 1000 / speed;
-
-            QTimer *stepTimer = new QTimer(this);
-            connect(stepTimer, &QTimer::timeout, this, [this, stepTimer]()
-                    {
-                        if ((vm->GetProgramCounter() >= vm->GetProgramSize() && vm->IsPipelineEmpty()) || vm->IsStopRequested()) {
-                            stepTimer->stop();
-                            stepTimer->deleteLater();
-
-                            updateExecutionInfo();
-                            refreshMemoryDisplay();  // ✅ Refresh at end
-
-                            QString msg = QString("Execution finished!\nInstructions: %1\nCycles: %2")
-                                              .arg(vm->instructions_retired_)
-                                              .arg(vm->cycle_s_);
-                            QMessageBox::information(this, "Complete", msg);
-                            return;
-                        }
-
-                        vm->Step();
-                        updateRegisterTable();
-                        highlightCurrentLine();
-                        updateExecutionInfo(); });
-
-            stepTimer->start(delayMs);
-            // qDebug() << "[onRun] DONE (animated mode started)";
-        }
-    }
-    catch (const std::exception &ex)
-    {
-        // qDebug() << "[onRun] EXCEPTION:" << ex.what();
-        vm->blockSignals(false);
-        QMessageBox::critical(this, "Error", ex.what());
-        updateRegisterTable();
+        stepTimer->start(delayMs);
     }
 }
 
@@ -799,28 +815,6 @@ void MainWindow::onStep()
     refreshMemoryDisplay();
 }
 
-void MainWindow::onPause()
-{
-    // qDebug() << "[onPause]";
-    if (vm)
-    {
-        vm->RequestStop();
-    }
-}
-
-void MainWindow::onStop()
-{
-    // qDebug() << "[onStop] START";
-    if (vm)
-    {
-        vm->RequestStop();
-        vm->Reset();
-        updateRegisterTable();
-        clearLineHighlight();
-    }
-    // qDebug() << "[onStop] DONE";
-}
-
 void MainWindow::onUndo(){
     // CodeEditor *editor = getCurrentEditor();
     if(program.errorCount != 0 ){
@@ -838,11 +832,18 @@ void MainWindow::onUndo(){
     }
 }
 
-void MainWindow::onReset(){
+void MainWindow::onReset()
+{
     if (!vm)
         return;
 
-    // Reset the current VM to its initial state.
+    // ✅ Stop any running execution
+    if (executionThread_ && executionThread_->isRunning()) {
+        executionThread_->requestStop();
+        executionThread_->wait(1000);
+        updateTimer_->stop();
+    }
+
     vm->RequestStop();
     vm->Reset();
 
@@ -850,18 +851,15 @@ void MainWindow::onReset(){
         vm->LoadProgram(program);
     }
 
-    // Update display panels to reflect VM reset.
     updateRegisterTable();
     updateExecutionInfo();
     refreshMemoryDisplay();
     clearLineHighlight();
 
-    // Optionally clear pipeline stage labels.
     CodeEditor *editor = getCurrentEditor();
-    if (editor)
-    {
+    if (editor) {
         editor->clearPipelineLabels();
-        editor->setFocus(); // Bring focus back to editor.
+        editor->setFocus();
     }
 }
 
@@ -1042,59 +1040,80 @@ void MainWindow::refreshMemoryDisplay()
 
 void MainWindow::showProcessorSelection()
 {
+    // ✅ Stop execution before switching
+    if (executionThread_ && executionThread_->isRunning()) {
+        executionThread_->requestStop();
+        executionThread_->wait(2000);
+        updateTimer_->stop();
+    }
+
     ProcessorWindow dlg(this);
-    dlg.setInitialSelection(lastName, lastISA); // Restore selection
+    dlg.setInitialSelection(lastName, lastISA);
+
     if (dlg.exec() == QDialog::Accepted)
     {
         lastName = dlg.selectedProcessorName();
         lastISA = dlg.selectedISA();
 
-        processorInfoLabel->setText(QString("Processor: %1 | ISA: %2").arg(lastName, lastISA));
+        processorInfoLabel->setText(QString("Processor: %1 | ISA: %2")
+                                        .arg(lastName, lastISA));
         ISA selected = (lastISA == "RV32") ? ISA::RV32 : ISA::RV64;
 
-        // Always use the current 'vm' pointer for core interaction
+        // ✅ Disconnect old pipelined signals
+        RVSSVMPipelined *oldPipeVm = qobject_cast<RVSSVMPipelined *>(vm);
+        if (oldPipeVm) {
+            disconnect(oldPipeVm, &RVSSVMPipelined::pipelineStageChanged,
+                       this, &MainWindow::onPipelineStageChanged);
+        }
+
+        // Switch VM
         if (lastName == "Single-cycle processor") {
             vm = singleCycleVm;
         } else {
             vm = pipelinedVm;
-            vm->Reset(); // Reset to new selection
 
-         //    // Cast safely to access pipelined-specific settings
             RVSSVMPipelined *pipeVm = qobject_cast<RVSSVMPipelined *>(vm);
-         //    qDebug() << pipelinedVm << " Name "<<lastName ;
             if (pipeVm) {
+                // Configure pipeline based on selection
                 if (lastName == "5-stage processor w/o forwarding or hazard detection") {
-                    // pipeVm->SetPipelineConfig(false, false,false);
-                    vm->SetPipelineConfig(false, false,false,false);
+                    vm->SetPipelineConfig(false, false, false, false);
                 } else if (lastName == "5-stage processor with forwarding and hazard detection") {
-                    // pipeVm->SetPipelineConfig(true, true,false);
-                    vm->SetPipelineConfig(true, true,false,false);
+                    vm->SetPipelineConfig(true, true, false, false);
                 } else if (lastName == "5-stage processor w/o hazard detection") {
-                    // pipeVm->SetPipelineConfig(false, true,false);
-                    vm->SetPipelineConfig(false, true,false,false);
+                    vm->SetPipelineConfig(false, true, false, false);
                 } else if (lastName == "5-stage processor w/o forwarding unit") {
-                    // pipeVm->SetPipelineConfig(true, false,false);
-                    vm->SetPipelineConfig(true, false,false,false);
-                } else if (lastName == "5-stage processor with static Branch prediction"){
-                    vm->SetPipelineConfig(true,true,true,false);
-                } else if (lastName == "5-stage processor with dynamic 1-bit Branch prediction"){
-                    vm->SetPipelineConfig(true,true,false,true);
+                    vm->SetPipelineConfig(true, false, false, false);
+                } else if (lastName == "5-stage processor with static Branch prediction") {
+                    vm->SetPipelineConfig(true, true, true, false);
+                } else if (lastName == "5-stage processor with dynamic 1-bit Branch prediction") {
+                    vm->SetPipelineConfig(true, true, false, true);
                 }
 
-                // You can call setup/refresh here if needed
-                // pipeVm->configurePipeline();
-                // std::cout<< "forwarding " <<pipeVm->forwarding_enabled_ << " hazard "<< pipeVm->hazard_detection_enabled_ << std::endl;
-                // Only connect once, or disconnect old!
-                disconnect(pipeVm, &RVSSVMPipelined::pipelineStageChanged, nullptr, nullptr);
+                // ✅ Connect new pipelined signals
                 connect(pipeVm, &RVSSVMPipelined::pipelineStageChanged,
                         this, &MainWindow::onPipelineStageChanged);
             }
+        }
+
+        // ✅ Update thread's VM pointer
+        executionThread_->setVM(vm);
+
+        // Reset and update displays
+        vm->Reset();
+        if (program.errorCount == 0) {
+            vm->LoadProgram(program);
         }
 
         vm->registers_->SetIsa(selected);
         updateRegisterTable();
         updateExecutionInfo();
         refreshMemoryDisplay();
+        clearLineHighlight();
+
+        CodeEditor *editor = getCurrentEditor();
+        if (editor) {
+            editor->clearPipelineLabels();
+        }
     }
 }
 
@@ -1126,3 +1145,98 @@ void MainWindow::onPipelineStageChanged(uint64_t pc, QString stage)
     // qDebug() << "Pipeline label set at line" << sourceLine << ":" << stage;
 }
 
+
+void MainWindow::onExecutionFinished(uint64_t instructions, uint64_t cycles)
+{
+    updateTimer_->stop();
+
+    // Final UI update
+    updateRegisterTable();
+    highlightCurrentLine();
+    updateExecutionInfo();
+    refreshMemoryDisplay();
+
+    statusBar()->showMessage("Execution complete", 3000);
+
+    QString msg = QString("Execution finished!\nInstructions: %1\nCycles: %2")
+                      .arg(instructions)
+                      .arg(cycles);
+    QMessageBox::information(this, "Complete", msg);
+}
+
+void MainWindow::onExecutionError(QString message)
+{
+    updateTimer_->stop();
+
+    // Update UI with final state
+    updateRegisterTable();
+    highlightCurrentLine();
+    updateExecutionInfo();
+    refreshMemoryDisplay();
+
+    statusBar()->showMessage("Execution stopped", 3000);
+    QMessageBox::critical(this, "Execution Error", message);
+}
+
+void MainWindow::onPeriodicUpdate()
+{
+    // Update GUI periodically during execution
+    updateRegisterTable();
+    highlightCurrentLine();
+    updateExecutionInfo();
+
+    // ✅ For pipelined mode, also update pipeline labels
+    CodeEditor *editor = getCurrentEditor();
+    if (editor) {
+        RVSSVMPipelined *pipeVm = qobject_cast<RVSSVMPipelined *>(vm);
+        if (pipeVm) {
+            // Pipeline labels are updated via signals, but we can force a repaint
+            editor->viewport()->update();
+        }
+    }
+}
+
+void MainWindow::onStop()
+{
+    if (executionThread_ && executionThread_->isRunning()) {
+        executionThread_->requestStop();
+        executionThread_->wait(1000); // Wait up to 1 second
+    }
+
+    updateTimer_->stop();
+
+    if (vm) {
+        vm->RequestStop();
+        vm->Reset();
+        updateRegisterTable();
+        clearLineHighlight();
+        updateExecutionInfo();
+    }
+
+    statusBar()->showMessage("Execution stopped", 2000);
+}
+
+void MainWindow::onPause()
+{
+    if (executionThread_ && executionThread_->isRunning()) {
+        executionThread_->requestStop();
+    }
+
+    if (vm) {
+        vm->RequestStop();
+    }
+
+    updateTimer_->stop();
+    statusBar()->showMessage("Execution paused", 2000);
+}
+
+MainWindow::~MainWindow()
+{
+    if (executionThread_) {
+        executionThread_->requestStop();
+        if (!executionThread_->wait(2000)) {
+            executionThread_->terminate();
+            executionThread_->wait();
+        }
+    }
+}

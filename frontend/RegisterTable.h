@@ -23,18 +23,21 @@ public:
         Double
     };
 
+    enum class RegisterType
+    {
+        Integer,        // GPR registers
+        FloatingPoint   // FPR registers
+    };
+
     explicit RegisterTable(QWidget *parent = nullptr);
 
     void initialize(const QStringList &regNames);
     QWidget *createDisplayTypeSelector();
     void setDisplayType(DisplayType type);
-    // void setBitWidth(int) {bitwidth = val;}
+    void setRegisterType(RegisterType type);  // Set whether this is GPR or FPR
 
-    // Update one register's value (backend connects to this)
 public slots:
     void updateRegister(int index, quint64 value);
-
-    // Update all register values at once (bulk refresh)
     void updateAllRegisters(const QVector<quint64> &values);
 
 signals:
@@ -45,15 +48,15 @@ private:
     void updateAllDisplayValues();
     void applyAlternatingRowColor(int index);
 
-    QVector<quint32> registerValues;
+    // ✅ PRIVATE member variables
+    QVector<quint64> registerValues;  // Changed from quint32 to quint64
     DisplayType displayType;
+    RegisterType registerType;  // ✅ MOVED TO PRIVATE
 
     // Helper brushes for row colors
     QBrush evenBrush;
     QBrush oddBrush;
-    QBrush highlightBrush; // Single highlight color
-
-
+    QBrush highlightBrush;
 };
 
 #endif // REGISTERTABLE_H

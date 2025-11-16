@@ -17,6 +17,7 @@ class ErrorConsole;
 class Assembler;
 class RVSSVM;
 class RVSSVMPipelined;
+class VMExecutionThread;
 struct ErrorMessage;
 
 struct FileTab
@@ -34,6 +35,8 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     void showProcessorSelection();
+    VMExecutionThread* executionThread_;
+    QTimer* updateTimer_;
 
 private:
     QTabWidget *tabWidget;
@@ -92,6 +95,9 @@ private slots:
     void onUndo();
     void onReset();
     void onPipelineStageChanged(uint64_t pc, QString stage);
+    void onExecutionFinished(uint64_t instructions, uint64_t cycles);
+    void onExecutionError(QString message);
+    void onPeriodicUpdate();
 
     // void onRunSlow();
 };

@@ -16,7 +16,6 @@ RVSSVMPipelined::~RVSSVMPipelined() = default;
 void RVSSVMPipelined::Reset()
 {
     RVSSVM::Reset();
-
     if_id_ = IF_ID();
     if_id_next_ = IF_ID();
     id_ex_ = ID_EX();

@@ -9,4 +9,6 @@ pipeline problems:
 ld is not working (it is working i need to check more).
 sd is not working (need for checking them).
 
-instruction_retired (issue) not resolved.
+instruction_retired (issue) not resolved (resolved but label showing got error)
+
+and we floating check should required.

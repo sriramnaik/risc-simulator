@@ -3,10 +3,11 @@
 #include <QFontMetrics>
 #include <QTimer>
 #include <cstring>
-// #include <QDebug>
+#include <cmath>
 
 RegisterTable::RegisterTable(QWidget *parent)
     : QTableWidget(parent), displayType(DisplayType::Hex),
+        registerType(RegisterType::Integer),
       evenBrush(QColor(30, 30, 30)), oddBrush(QColor(40, 40, 40)),
       highlightBrush(QColor(64, 156, 255, 80))
 {
@@ -33,6 +34,11 @@ RegisterTable::RegisterTable(QWidget *parent)
         "QHeaderView::section { background-color: #252526; color: white; padding: 4px; }"
         "QTableWidget::item:selected { background: #3a3d41; }"
         "QTableWidget::item { padding: 2px; }");
+}
+
+void RegisterTable::setRegisterType(RegisterType type)
+{
+    registerType = type;
 }
 
 void RegisterTable::initialize(const QStringList &regNames)
@@ -82,18 +88,33 @@ QWidget *RegisterTable::createDisplayTypeSelector()
     label->setStyleSheet("color: #dcdcdc;");
 
     QComboBox *combo = new QComboBox();
-    combo->addItem("Hex");
-    combo->addItem("Unsigned");
-    combo->addItem("Signed");
-    combo->addItem("Float");
-    combo->addItem("Double");
 
-    combo->setCurrentIndex(static_cast<int>(displayType));
+    // ✅ CHANGED: Different options based on register type
+    if (registerType == RegisterType::Integer) {
+        combo->addItem("Hex");
+        combo->addItem("Unsigned");
+        combo->addItem("Signed");
+    } else {
+        combo->addItem("Hex");
+        combo->addItem("Float (Single Precision)");
+        combo->addItem("Double (Double Precision)");
+    }
+
+    combo->setCurrentIndex(0);
     connect(combo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this, combo](int index)
             {
-        auto type = static_cast<DisplayType>(index);
-        setDisplayType(type);
-        emit displayTypeChanged(type); });
+                DisplayType type;
+                if (registerType == RegisterType::Integer) {
+                    type = static_cast<DisplayType>(index);  // 0->Hex, 1->Unsigned, 2->Signed
+                } else {
+                    // For Float registers: 0->Hex, 1->Float, 2->Double
+                    if (index == 0) type = DisplayType::Hex;
+                    else if (index == 1) type = DisplayType::Float;
+                    else type = DisplayType::Double;
+                }
+                setDisplayType(type);
+                emit displayTypeChanged(type);
+            });
 
     layout->addWidget(label);
     layout->addWidget(combo);
@@ -196,7 +217,6 @@ QString RegisterTable::formatValue(quint64 value) const
     {
         QString hex = QString("%1").arg(value, 16, 16, QLatin1Char('0'));
         QString grouped;
-
         for (int i = 0; i < hex.length(); ++i)
         {
             if (i > 0 && i % 4 == 0)
@@ -207,31 +227,48 @@ QString RegisterTable::formatValue(quint64 value) const
     }
 
     case DisplayType::Unsigned:
-        return QString(" %1").arg(value);
+        // ✅ CHANGED: Only for Integer registers
+        if (registerType == RegisterType::Integer) {
+            return QString(" %1").arg(value);
+        }
+        return QString(" 0x%1").arg(value, 16, 16, QLatin1Char('0'));
 
     case DisplayType::Signed:
-        return QString(" %1").arg(static_cast<qint64>(value));
+        // ✅ CHANGED: Only for Integer registers
+        if (registerType == RegisterType::Integer) {
+            return QString(" %1").arg(static_cast<qint64>(value));
+        }
+        return QString(" 0x%1").arg(value, 16, 16, QLatin1Char('0'));
 
     case DisplayType::Float:
     {
+        // ✅ CHANGED: Proper single-precision (lower 32 bits)
         float f;
-        quint32 lo = static_cast<quint32>(value);    // take lower 32 bits
+        quint32 lo = static_cast<quint32>(value & 0xFFFFFFFF);
         memcpy(&f, &lo, sizeof(f));
-        return QString(" %1").arg(f, 0, 'f', 6);
+
+        if (std::isnan(f)) return QString(" NaN");
+        if (std::isinf(f)) return f > 0 ? QString(" +Inf") : QString(" -Inf");
+
+        return QString(" %1").arg(static_cast<double>(f), 0, 'g', 9);
     }
 
     case DisplayType::Double:
     {
+        // ✅ CHANGED: Proper double-precision (full 64 bits)
         double d;
-        memcpy(&d, &value, sizeof(d));   // copy full 8 bytes correctly
-        return QString(" %1").arg(d, 0, 'f', 6);
+        memcpy(&d, &value, sizeof(d));
+
+        if (std::isnan(d)) return QString(" NaN");
+        if (std::isinf(d)) return d > 0 ? QString(" +Inf") : QString(" -Inf");
+
+        return QString(" %1").arg(d, 0, 'g', 17);
     }
 
     default:
         return QString(" 0x%1").arg(value, 16, 16, QLatin1Char('0'));
     }
 }
-
 
 void RegisterTable::applyAlternatingRowColor(int index)
 {
