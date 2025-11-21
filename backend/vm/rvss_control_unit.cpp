@@ -8,6 +8,9 @@
 #include "../alu.h"
 
 #include <cstdint>
+#include <iostream>
+#include <qdebug.h>
+#include <qlogging.h>
 
 
 void RVSSControlUnit::SetControlSignals(uint32_t instruction) {
@@ -78,6 +81,7 @@ void RVSSControlUnit::SetControlSignals(uint32_t instruction) {
 
         // F extension + D extension
         case 0b0000111: {// F-Type Load instructions (FLW, FLD)
+            // qDebug() << " F- type load";
             alu_src_ = true;
           mem_to_reg_ = true;
           reg_write_ = true;
@@ -119,6 +123,7 @@ alu::AluOp RVSSControlUnit::GetAluSignal(uint32_t instruction, bool ALUOp) {
     uint8_t funct2 = (instruction >> 25) & 0b11;
     // uint8_t funct6 = (instruction >> 26) & 0b111111;
 
+    std::cout << opcode;
     switch (opcode)
     {
     case 0b0110011: {// R-Type

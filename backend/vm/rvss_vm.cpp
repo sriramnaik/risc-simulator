@@ -103,70 +103,6 @@ void RVSSVM::Execute()
     }
 }
 
-void RVSSVM::ExecuteFloat()
-{
-    uint8_t opcode = current_instruction_ & 0b1111111;
-    uint8_t funct3 = (current_instruction_ >> 12) & 0b111;
-    uint8_t funct7 = (current_instruction_ >> 25) & 0b1111111;
-    uint8_t rm = funct3;
-    uint8_t rs1 = (current_instruction_ >> 15) & 0b11111;
-    uint8_t rs2 = (current_instruction_ >> 20) & 0b11111;
-    uint8_t rs3 = (current_instruction_ >> 27) & 0b11111;
-
-    uint8_t fcsr_status = 0;
-    int32_t imm = ImmGenerator(current_instruction_);
-
-    if (rm == 0b111)
-        rm = registers_->ReadCsr(0x002);
-
-    uint64_t reg1_value = registers_->ReadFpr(rs1);
-    uint64_t reg2_value = registers_->ReadFpr(rs2);
-    uint64_t reg3_value = registers_->ReadFpr(rs3);
-
-    if (funct7 == 0b1101000 || funct7 == 0b1111000 || opcode == 0b0000111 || opcode == 0b0100111)
-        reg1_value = registers_->ReadGpr(rs1);
-
-    if (control_unit_.GetAluSrc())
-        reg2_value = static_cast<uint64_t>(static_cast<int64_t>(imm));
-
-    alu::AluOp aluOperation = control_unit_.GetAluSignal(current_instruction_, control_unit_.GetAluOp());
-    std::tie(execution_result_, fcsr_status) = alu::Alu::fpexecute(aluOperation, reg1_value, reg2_value, reg3_value, rm);
-
-    registers_->WriteCsr(0x003, fcsr_status);
-    emit csrUpdated(0x003, fcsr_status);
-}
-
-void RVSSVM::ExecuteDouble()
-{
-    if (registers_->GetIsa() != ISA::RV64) {
-        emit vmError("Double-precision not supported in RV32");
-        return;
-    }
-    uint8_t opcode = current_instruction_ & 0b1111111;
-    uint8_t funct3 = (current_instruction_ >> 12) & 0b111;
-    uint8_t funct7 = (current_instruction_ >> 25) & 0b1111111;
-    uint8_t rm = funct3;
-    uint8_t rs1 = (current_instruction_ >> 15) & 0b11111;
-    uint8_t rs2 = (current_instruction_ >> 20) & 0b11111;
-    uint8_t rs3 = (current_instruction_ >> 27) & 0b11111;
-
-    uint8_t fcsr_status = 0;
-    int32_t imm = ImmGenerator(current_instruction_);
-
-    uint64_t reg1_value = registers_->ReadFpr(rs1);
-    uint64_t reg2_value = registers_->ReadFpr(rs2);
-    uint64_t reg3_value = registers_->ReadFpr(rs3);
-
-    if (funct7 == 0b1101001 || funct7 == 0b1111001 || opcode == 0b0000111 || opcode == 0b0100111)
-        reg1_value = registers_->ReadGpr(rs1);
-
-    if (control_unit_.GetAluSrc())
-        reg2_value = static_cast<uint64_t>(static_cast<int64_t>(imm));
-
-    alu::AluOp aluOperation = control_unit_.GetAluSignal(current_instruction_, control_unit_.GetAluOp());
-    std::tie(execution_result_, fcsr_status) = alu::Alu::dfpexecute(aluOperation, reg1_value, reg2_value, reg3_value, rm);
-}
-
 void RVSSVM::ExecuteCsr()
 {
     uint8_t rs1 = (current_instruction_ >> 15) & 0b11111;
@@ -312,59 +248,6 @@ void RVSSVM::WriteMemory()
     }
 }
 
-void RVSSVM::WriteMemoryFloat()
-{
-    uint8_t rs2 = (current_instruction_ >> 20) & 0b11111;
-    if (control_unit_.GetMemRead())
-        memory_result_ = memory_controller_.ReadWord(execution_result_);
-
-    if (control_unit_.GetMemWrite()) {
-        if (recording_enabled_) {
-            MemoryChange mem_change;
-            mem_change.address = execution_result_;
-            uint32_t old_val = memory_controller_.ReadWord(execution_result_);
-            for (int i = 0; i < 4; ++i)
-                mem_change.old_bytes_vec.push_back((old_val >> (i * 8)) & 0xFF);
-            uint32_t new_val = registers_->ReadFpr(rs2) & 0xFFFFFFFF;
-            for (int i = 0; i < 4; ++i)
-                mem_change.new_bytes_vec.push_back((new_val >> (i * 8)) & 0xFF);
-            current_delta_.memory_changes.push_back(mem_change);
-        }
-
-        uint32_t val = registers_->ReadFpr(rs2) & 0xFFFFFFFF;
-        memory_controller_.WriteWord(execution_result_, val);
-    }
-}
-
-
-void RVSSVM::WriteMemoryDouble()
-{
-    if (registers_->GetIsa() != ISA::RV64) {
-        emit vmError("Double-precision store/read not supported in RV32");
-        return;
-    }
-    uint8_t rs2 = (current_instruction_ >> 20) & 0b11111;
-
-    if (control_unit_.GetMemRead())
-        memory_result_ = memory_controller_.ReadDoubleWord(execution_result_);
-
-    if (control_unit_.GetMemWrite()) {
-        if (recording_enabled_) {
-            MemoryChange mem_change;
-            mem_change.address = execution_result_;
-            uint64_t old_val = memory_controller_.ReadDoubleWord(execution_result_);
-            for (int i = 0; i < 8; ++i)
-                mem_change.old_bytes_vec.push_back((old_val >> (i * 8)) & 0xFF);
-            uint64_t new_val = registers_->ReadFpr(rs2);
-            for (int i = 0; i < 8; ++i)
-                mem_change.new_bytes_vec.push_back((new_val >> (i * 8)) & 0xFF);
-            current_delta_.memory_changes.push_back(mem_change);
-        }
-
-        memory_controller_.WriteDoubleWord(execution_result_, registers_->ReadFpr(rs2));
-    }
-}
-
 void RVSSVM::WriteBack()
 {
     uint8_t opcode = current_instruction_ & 0b1111111;
@@ -426,52 +309,359 @@ void RVSSVM::WriteBack()
     }
 }
 
+void RVSSVM::ExecuteFloat()
+{
+    uint8_t opcode = current_instruction_ & 0b1111111;
+    uint8_t funct3 = (current_instruction_ >> 12) & 0b111;
+    uint8_t funct7 = (current_instruction_ >> 25) & 0b1111111;
+    uint8_t rm = funct3;
+    uint8_t rs1 = (current_instruction_ >> 15) & 0b11111;
+    uint8_t rs2 = (current_instruction_ >> 20) & 0b11111;
+    uint8_t rs3 = (current_instruction_ >> 27) & 0b11111;
+
+    uint8_t fcsr_status = 0;
+    int32_t imm = ImmGenerator(current_instruction_);
+
+    if (rm == 0b111)
+        rm = registers_->ReadCsr(0x002);
+
+    // Handle FLW (opcode 0b0000111) - Float Load Word
+    if (opcode == 0b0000111) {
+        // Address = GPR[rs1] + imm
+        uint64_t base_addr = registers_->ReadGpr(rs1);
+        execution_result_ = base_addr + imm;
+        // WriteMemoryFloat will handle the actual load
+        return;
+    }
+
+    // Handle FSW (opcode 0b0100111) - Float Store Word
+    if (opcode == 0b0100111) {
+        // Address = GPR[rs1] + imm
+        uint64_t base_addr = registers_->ReadGpr(rs1);
+        execution_result_ = base_addr + imm;
+        // WriteMemoryFloat will handle the actual store
+        return;
+    }
+
+    // Default: read from FPR
+    uint64_t reg1_value = registers_->ReadFpr(rs1);
+    uint64_t reg2_value = registers_->ReadFpr(rs2);
+    uint64_t reg3_value = registers_->ReadFpr(rs3);
+
+    // Validate NaN-boxing for single-precision operands
+    // If upper 32 bits are not all 1s, treat as canonical NaN
+    auto validate_sp = [](uint64_t val) -> uint64_t {
+        if ((val & 0xFFFFFFFF00000000ULL) != 0xFFFFFFFF00000000ULL) {
+            // Not properly NaN-boxed, return canonical NaN
+            // qDebug() << "Warning: FPR value not properly NaN-boxed:" << QString::number(val, 16);
+            return 0x7FC00000; // Canonical single-precision NaN
+        }
+        return val & 0xFFFFFFFF; // Extract lower 32 bits
+    };
+
+    // For instructions that need GPR source, don't validate
+    if (funct7 != 0b1101000 && funct7 != 0b1111000) {
+        reg1_value = validate_sp(reg1_value);
+        reg2_value = validate_sp(reg2_value);
+        reg3_value = validate_sp(reg3_value);
+    }
+
+    // Instructions that need GPR source:
+    // FCVT.S.W/FCVT.S.WU (funct7=0b1101000): convert int to float, source is GPR
+    // FMV.W.X (funct7=0b1111000): move bits from GPR to FPR
+    // if (funct7 == 0b1101000 || funct7 == 0b1111000) {
+    //     reg1_value = registers_->ReadGpr(rs1);
+    // }
+
+    // Note: FCVT.W.S/FCVT.WU.S (funct7=0b1100000) converts float to int
+    // Source is FPR (already read above), destination is GPR (handled in WriteBackFloat)
+
+    if (control_unit_.GetAluSrc())
+        reg2_value = static_cast<uint64_t>(static_cast<int64_t>(imm));
+
+    alu::AluOp aluOperation = control_unit_.GetAluSignal(current_instruction_, control_unit_.GetAluOp());
+    std::cout << aluOperation;
+    std::tie(execution_result_, fcsr_status) = alu::Alu::fpexecute(aluOperation, reg1_value, reg2_value, reg3_value, rm);
+
+    registers_->WriteCsr(0x003, fcsr_status);
+    emit csrUpdated(0x003, fcsr_status);
+}
+
+void RVSSVM::ExecuteDouble()
+{
+    if (registers_->GetIsa() != ISA::RV64) {
+        emit vmError("Double-precision not supported in RV32");
+        return;
+    }
+    uint8_t opcode = current_instruction_ & 0b1111111;
+    uint8_t funct3 = (current_instruction_ >> 12) & 0b111;
+    uint8_t funct7 = (current_instruction_ >> 25) & 0b1111111;
+    uint8_t rm = funct3;
+    uint8_t rs1 = (current_instruction_ >> 15) & 0b11111;
+    uint8_t rs2 = (current_instruction_ >> 20) & 0b11111;
+    uint8_t rs3 = (current_instruction_ >> 27) & 0b11111;
+
+    uint8_t fcsr_status = 0;
+    int32_t imm = ImmGenerator(current_instruction_);
+
+    // Handle FLD (opcode 0b0000111, funct3=0b011) - Float Load Double
+    if (opcode == 0b0000111) {
+        uint64_t base_addr = registers_->ReadGpr(rs1);
+        execution_result_ = base_addr + imm;
+        return;
+    }
+
+    // Handle FSD (opcode 0b0100111, funct3=0b011) - Float Store Double
+    if (opcode == 0b0100111) {
+        uint64_t base_addr = registers_->ReadGpr(rs1);
+        execution_result_ = base_addr + imm;
+        return;
+    }
+
+    uint64_t reg1_value = registers_->ReadFpr(rs1);
+    uint64_t reg2_value = registers_->ReadFpr(rs2);
+    uint64_t reg3_value = registers_->ReadFpr(rs3);
+
+    // FCVT.D.W/FCVT.D.WU/FCVT.D.L/FCVT.D.LU (funct7=0b1101001): int to double
+    // FMV.D.X (funct7=0b1111001): move bits from GPR to FPR
+    if (funct7 == 0b1101001 || funct7 == 0b1111001) {
+        reg1_value = registers_->ReadGpr(rs1);
+    }
+
+    if (control_unit_.GetAluSrc())
+        reg2_value = static_cast<uint64_t>(static_cast<int64_t>(imm));
+
+    alu::AluOp aluOperation = control_unit_.GetAluSignal(current_instruction_, control_unit_.GetAluOp());
+    std::tie(execution_result_, fcsr_status) = alu::Alu::dfpexecute(aluOperation, reg1_value, reg2_value, reg3_value, rm);
+
+    registers_->WriteCsr(0x003, fcsr_status);
+    emit csrUpdated(0x003, fcsr_status);
+}
+
+void RVSSVM::WriteMemoryFloat()
+{
+    uint8_t opcode = current_instruction_ & 0b1111111;
+    uint8_t rs2 = (current_instruction_ >> 20) & 0b11111;
+
+    // FLW - Load float from memory to FPR
+    if (control_unit_.GetMemRead()) {
+        uint32_t raw_value = memory_controller_.ReadWord(execution_result_);
+        memory_result_ = 0xFFFFFFFF00000000ULL | raw_value;
+
+        // qDebug() << "FLW: Loading from address" << execution_result_
+        //          << "raw value:" << QString::number(raw_value, 16)
+        //          << "boxed value:" << QString::number(memory_result_, 16);
+    }
+
+    // FSW - Store float from FPR to memory
+    if (control_unit_.GetMemWrite()) {
+
+        uint32_t float_bits = registers_->ReadFpr(rs2) & 0xFFFFFFFF;
+
+        if (recording_enabled_) {
+            MemoryChange mem_change;
+            mem_change.address = execution_result_;
+            uint32_t old_val = memory_controller_.ReadWord(execution_result_);
+            for (int i = 0; i < 4; ++i)
+                mem_change.old_bytes_vec.push_back((old_val >> (i * 8)) & 0xFF);
+            for (int i = 0; i < 4; ++i)
+                mem_change.new_bytes_vec.push_back((float_bits >> (i * 8)) & 0xFF);
+            current_delta_.memory_changes.push_back(mem_change);
+        }
+
+        // uint32_t val = registers_->ReadFpr(rs2) & 0xFFFFFFFF;
+        // memory_controller_.WriteWord(execution_result_, val);
+        // qDebug() << "FSW: Storing to address" << execution_result_ << "value:" << val;
+        memory_controller_.WriteWord(execution_result_, float_bits);
+        // qDebug() << "FSW: Storing to address" << execution_result_
+        //          << "value:" << QString::number(float_bits, 16);
+    }
+}
+
+void RVSSVM::WriteMemoryDouble()
+{
+    if (registers_->GetIsa() != ISA::RV64) {
+        emit vmError("Double-precision store/read not supported in RV32");
+        return;
+    }
+    uint8_t rs2 = (current_instruction_ >> 20) & 0b11111;
+
+    // FLD - Load double from memory
+    if (control_unit_.GetMemRead()) {
+        memory_result_ = memory_controller_.ReadDoubleWord(execution_result_);
+        // qDebug() << "FLD: Loading from address" << execution_result_ << "value:" << memory_result_;
+    }
+
+    // FSD - Store double to memory
+    if (control_unit_.GetMemWrite()) {
+        if (recording_enabled_) {
+            MemoryChange mem_change;
+            mem_change.address = execution_result_;
+            uint64_t old_val = memory_controller_.ReadDoubleWord(execution_result_);
+            for (int i = 0; i < 8; ++i)
+                mem_change.old_bytes_vec.push_back((old_val >> (i * 8)) & 0xFF);
+            uint64_t new_val = registers_->ReadFpr(rs2);
+            for (int i = 0; i < 8; ++i)
+                mem_change.new_bytes_vec.push_back((new_val >> (i * 8)) & 0xFF);
+            current_delta_.memory_changes.push_back(mem_change);
+        }
+
+        memory_controller_.WriteDoubleWord(execution_result_, registers_->ReadFpr(rs2));
+        // qDebug() << "FSD: Storing to address" << execution_result_ << "value:" << registers_->ReadFpr(rs2);
+    }
+}
+
 void RVSSVM::WriteBackFloat()
 {
     uint8_t opcode = current_instruction_ & 0b1111111;
     uint8_t funct7 = (current_instruction_ >> 25) & 0b1111111;
     uint8_t rd = (current_instruction_ >> 7) & 0b11111;
-    if (control_unit_.GetRegWrite()) {
-        uint64_t value = execution_result_;
-        if (registers_->GetIsa() == ISA::RV32)
-            value &= 0xFFFFFFFF;
 
+    if (!control_unit_.GetRegWrite())
+        return;
+
+    // Determine the value to write
+    uint64_t value;
+
+    // FLW (opcode 0b0000111) - value comes from memory
+    if (opcode == 0b0000111) {
+        value = memory_result_;
+        // qDebug() << "WriteBackFloat FLW: Writing memory_result_" << value << "to FPR" << rd;
+    }
+    // FCVT.W.S / FCVT.WU.S (funct7=0b1100000) - float to int, write to GPR
+    else if (funct7 == 0b1100000) {
+        value = execution_result_;
         if (recording_enabled_) {
             RegisterChange change;
-            change.reg_type = 2; // FPR
+            change.reg_type = 0; // GPR
             change.reg_index = rd;
-            change.old_value = registers_->ReadFpr(rd);
+            change.old_value = registers_->ReadGpr(rd);
             change.new_value = value;
             current_delta_.register_changes.push_back(change);
         }
-
-        registers_->WriteFpr(rd, value);
-        emit fprUpdated(rd, value);
+        registers_->WriteGpr(rd, value);
+        emit gprUpdated(rd, value);
+        // qDebug() << "WriteBackFloat FCVT: Writing" << value << "to GPR" << rd;
+        return; // Don't write to FPR
     }
+    // FMV.X.W (funct7=0b1110000) - move bits from FPR to GPR
+    else if (funct7 == 0b1110000) {
+        value = execution_result_;
+        if (recording_enabled_) {
+            RegisterChange change;
+            change.reg_type = 0; // GPR
+            change.reg_index = rd;
+            change.old_value = registers_->ReadGpr(rd);
+            change.new_value = value;
+            current_delta_.register_changes.push_back(change);
+        }
+        registers_->WriteGpr(rd, value);
+        emit gprUpdated(rd, value);
+        // qDebug() << "WriteBackFloat FMV.X.W: Writing" << value << "to GPR" << rd;
+        return;
+    }
+    // All other float ops - result goes to FPR
+    else {
+        value = execution_result_;
+    }
+
+    // Mask for RV32
+    // if (registers_->GetIsa() == ISA::RV32)
+    //     value &= 0xFFFFFFFF;
+
+    if (registers_->GetIsa() == ISA::RV32) {
+        // In RV32, single-precision values must be NaN-boxed:
+        // Upper 32 bits = all 1s, lower 32 bits = the float value
+        uint32_t float_bits = value & 0xFFFFFFFF;
+        value = 0xFFFFFFFF00000000ULL | float_bits;
+        // qDebug() << "RV32: NaN-boxing float value to" << QString::number(value, 16);
+    } else {
+        // In RV64, single-precision floats are also NaN-boxed
+        uint32_t float_bits = value & 0xFFFFFFFF;
+        value = 0xFFFFFFFF00000000ULL | float_bits;
+        // qDebug() << "RV64: NaN-boxing float value to" << QString::number(value, 16);
+    }
+
+    if (recording_enabled_) {
+        RegisterChange change;
+        change.reg_type = 2; // FPR
+        change.reg_index = rd;
+        change.old_value = registers_->ReadFpr(rd);
+        change.new_value = value;
+        current_delta_.register_changes.push_back(change);
+    }
+
+    registers_->WriteFpr(rd, value);
+    emit fprUpdated(rd, value);
+    // qDebug() << "WriteBackFloat: Writing" << QString::number(value, 16) << "to FPR" << rd;
 }
 
 void RVSSVM::WriteBackDouble()
 {
     if (registers_->GetIsa() != ISA::RV64) {
-        emit vmError("Double-precision FPR write not allowed in RV32");
+        // emit vmError("Double-precision FPR write not allowed in RV32");
         return;
     }
+
     uint8_t opcode = current_instruction_ & 0b1111111;
     uint8_t funct7 = (current_instruction_ >> 25) & 0b1111111;
     uint8_t rd = (current_instruction_ >> 7) & 0b11111;
-    if (control_unit_.GetRegWrite()) {
 
+    if (!control_unit_.GetRegWrite())
+        return;
+
+    uint64_t value;
+
+    // FLD (opcode 0b0000111) - value comes from memory
+    if (opcode == 0b0000111) {
+        value = memory_result_;
+        // qDebug() << "WriteBackDouble FLD: Writing memory_result_" << value << "to FPR" << rd;
+    }
+    // FCVT.W.D / FCVT.L.D etc (funct7=0b1100001) - double to int, write to GPR
+    else if (funct7 == 0b1100001) {
+        value = execution_result_;
         if (recording_enabled_) {
             RegisterChange change;
-            change.reg_type = 2; // FPR
+            change.reg_type = 0; // GPR
             change.reg_index = rd;
-            change.old_value = registers_->ReadFpr(rd);
-            change.new_value = execution_result_;
+            change.old_value = registers_->ReadGpr(rd);
+            change.new_value = value;
             current_delta_.register_changes.push_back(change);
         }
-        registers_->WriteFpr(rd, execution_result_);
-        emit fprUpdated(rd, execution_result_);
+        registers_->WriteGpr(rd, value);
+        emit gprUpdated(rd, value);
+        return;
     }
+    // FMV.X.D (funct7=0b1110001) - move bits from FPR to GPR
+    else if (funct7 == 0b1110001) {
+        value = execution_result_;
+        if (recording_enabled_) {
+            RegisterChange change;
+            change.reg_type = 0; // GPR
+            change.reg_index = rd;
+            change.old_value = registers_->ReadGpr(rd);
+            change.new_value = value;
+            current_delta_.register_changes.push_back(change);
+        }
+        registers_->WriteGpr(rd, value);
+        emit gprUpdated(rd, value);
+        return;
+    }
+    else {
+        value = execution_result_;
+    }
+
+    if (recording_enabled_) {
+        RegisterChange change;
+        change.reg_type = 2; // FPR
+        change.reg_index = rd;
+        change.old_value = registers_->ReadFpr(rd);
+        change.new_value = value;
+        current_delta_.register_changes.push_back(change);
+    }
+
+    registers_->WriteFpr(rd, value);
+    emit fprUpdated(rd, value);
 }
 
 void RVSSVM::WriteBackCsr()
@@ -594,7 +784,7 @@ void RVSSVM::Run()
         emit statusChanged("VM_PROGRAM_END");
 
     DumpRegisters(globals::registers_dump_file_path,*registers_);
-    qDebug() << "Dump Registers is finished";
+    // qDebug() << "Dump Registers is finished";
 }
 
 void RVSSVM::DebugRun()
@@ -661,7 +851,7 @@ void RVSSVM::Step()
     current_delta_ = StepDelta();
 
     DumpRegisters(globals::registers_dump_file_path, *registers_);
-    qDebug() << "Step completed";
+    // qDebug() << "Step completed";
 }
 
 void RVSSVM::Undo()
@@ -722,5 +912,7 @@ void RVSSVM::Reset()
     current_delta_.old_pc = 0;
     current_delta_.new_pc = 0;
     undo_stack_ = std::stack<StepDelta>();
+
+    DumpRegisters(globals::registers_dump_file_path,*registers_);
     // redo_stack_ = std::stack<StepDelta>();
 }

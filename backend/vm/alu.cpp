@@ -1,18 +1,16 @@
-/**
- * File Name: alu.cpp
- * Author: Vishank Singh
- * Github: https://github.com/VishankSingh
- */
-
 #include "alu.h"
 #include <cfenv>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <iostream>
+#include <qdebug.h>
+#include <qlogging.h>
 
 namespace alu {
 
 [[nodiscard]] std::pair<uint64_t, bool> Alu::execute(AluOp op, uint64_t a, uint64_t b) {
+
   switch (op) {
     case AluOp::kAdd: {
       auto sa = static_cast<int64_t>(a);
@@ -214,6 +212,7 @@ namespace alu {
                                                           uint64_t inb,
                                                           uint64_t inc,
                                                           uint8_t rm) {
+    std::cout << op << "\n";
   float a, b, c;
   std::memcpy(&a, &ina, sizeof(float));
   std::memcpy(&b, &inb, sizeof(float));
@@ -481,7 +480,7 @@ namespace alu {
   if (raised & FE_INEXACT) fcsr |= FCSR_INEXACT;
 
   std::fesetround(original_rm);
-
+  qDebug() << result;
   uint32_t result_bits = 0;
   std::memcpy(&result_bits, &result, sizeof(result));
   return {static_cast<uint64_t>(result_bits), fcsr};

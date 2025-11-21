@@ -17,10 +17,13 @@ public:
     enum class DisplayType
     {
         Hex = 0,
-        Unsigned,
-        Signed,
-        Float,
-        Double
+        Unsigned = 1,
+        Signed = 2,
+        Float = 3,          // Single precision decimal
+        Double = 4,         // Double precision decimal
+        FloatHex = 5,       // Single precision with hex
+        DoubleHex = 6,      // Double precision with hex
+        IEEE754 = 7         // Full IEEE 754 breakdown
     };
 
     enum class RegisterType
@@ -35,6 +38,7 @@ public:
     QWidget *createDisplayTypeSelector();
     void setDisplayType(DisplayType type);
     void setRegisterType(RegisterType type);  // Set whether this is GPR or FPR
+    void reset();
 
 public slots:
     void updateRegister(int index, quint64 value);
@@ -57,6 +61,12 @@ private:
     QBrush evenBrush;
     QBrush oddBrush;
     QBrush highlightBrush;
+
+    QString formatFloatAsHex(quint64 value, bool singlePrecision) const;
+    QString getFloatTooltip(quint64 value) const;
+    QString getDoubleTooltip(quint64 bits) const;
+
+
 };
 
 #endif // REGISTERTABLE_H

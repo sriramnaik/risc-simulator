@@ -22,6 +22,7 @@ public:
     RegisterFile *getRegisterFile();
     QTabWidget *getTabWidget() const { return tabs; }
     void setregisterBitWidth(int val) { registerBitWidth = val ;}
+    void resetAllTables();
 
 private slots:
     // void onDisplayTypeChanged(int index);

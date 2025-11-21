@@ -165,3 +165,17 @@ RegisterPanel::RegisterPanel(QWidget *parent)
 RegisterFile* RegisterPanel::getRegisterFile() {
     return backendRegisterFile;
 }
+
+void RegisterPanel::resetAllTables()
+{
+    if (intRegs) {
+        intRegs->reset();
+    }
+    if (floatRegs) {
+        floatRegs->reset();
+    }
+    if (csrTable) {
+        csrTable->reset();  // You'll need to add this to ControlStatusTable too
+    }
+}
+

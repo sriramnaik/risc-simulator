@@ -3,7 +3,6 @@
 #include "codeeditor.h"
 #include "registerpanel.h"
 #include "bottompanel.h"
-// #include "errorconsole.h"
 #include "../backend/assembler/assembler.h"
 #include "../backend/vm/rvss_vm.h"
 #include "../backend/vm/rvss_vm_pipelined.h"
@@ -320,13 +319,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(vm, &RVSSVM::memoryUpdated, bottomPanel->getDataSegment(),
             &DataSegment::updateMemory);
 
-    // connect(vm, &RVSSVMPipelined::pipelineStageChanged,
-    //         this, &MainWindow::onPipelineStageChanged);
-
-
-
-    // registerPanel->setregisterBitWidth(lastISA == "RV32" ? 32 : 64);
-
     // --- Connect toolbar actions ---
     // qDebug() << "[MainWindow] Connecting toolbar actions";
     connect(newFileAction, &QAction::triggered, this, &MainWindow::onNewFile);
@@ -361,11 +353,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     // qDebug() << "[MainWindow] Constructor COMPLETE";
 }
-
-// MainWindow::~MainWindow()
-// {
-//     // qDebug() << "[MainWindow] Destructor";
-// }
 
 CodeEditor *MainWindow::getCurrentEditor()
 {
@@ -627,6 +614,10 @@ void MainWindow::onAssemble()
         bool saved = saveToFile(currentTabIndex, filePath);
         if (!saved)
             return;
+    }
+
+    if (registerPanel) {
+        registerPanel->resetAllTables();
     }
 
     if (!assembler)
@@ -940,52 +931,122 @@ bool MainWindow::promptSaveChanges(int tabIndex)
     return true;
 }
 
+// void MainWindow::updateRegisterTable()
+// {
+//     // qDebug() << "[updateRegisterTable] START";
+//     try
+//     {
+//         if (!registerPanel)
+//         {
+//             // qDebug() << "[updateRegisterTable] ERROR: registerPanel is null!";
+//             return;
+//         }
+
+//         qDebug() << "Backend FPR[0] = " << registerPanel->getRegisterFile()->GetFprValues();
+//         qDebug() << "Frontend FPR[0] = " << registerPanel->getFprTable();
+
+//         RegisterFile *registers = registerPanel->getRegisterFile();
+//         if (!registers)
+//         {
+//             // qDebug() << "[updateRegisterTable] ERROR: registers is null!";
+//             return;
+//         }
+
+//         RegisterTable *reg_table = registerPanel->getRegTable();
+//         RegisterTable *fpr_table = registerPanel->getFprTable();
+//         if (!reg_table)
+//         {
+//             // qDebug() << "[updateRegisterTable] ERROR: reg_table is null!";
+//             return;
+//         }
+
+//         if (!fpr_table)
+//         {
+//             qDebug() << "[updateRegisterTable] ERROR: reg_table is null!";
+//             return;
+//         }
+
+
+//         uint64_t pc_value = vm ? vm->GetProgramCounter() : 0;
+//         // qDebug() << "[updateRegisterTable] PC =" << pc_value;
+
+//         QVector<quint64> reg_values;
+//         QVector<quint64> fpr_values;
+
+//         // First add all 32 GPRs
+//         for (uint64_t v : registers->GetGprValues())
+//             reg_values << static_cast<quint64>(v);
+
+//         qDebug() << "[updateRegisterTable] reg_values.size() =" << reg_values.size();
+//         for (uint64_t v : registers->GetFprValues()){
+//             fpr_values << static_cast<quint64>(v);
+//             // qDebug() << static_cast<quint64>(v);
+//         }
+
+//         // Then add PC at the end
+//         reg_values << static_cast<quint64>(pc_value);
+
+//         // qDebug() << "[updateRegisterTable] reg_table->rowCount() =" << reg_table->rowCount();
+
+//         reg_table->updateAllRegisters(reg_values);
+//         fpr_table->updateAllRegisters(fpr_values);
+//         // qDebug() << "[updateRegisterTable] DONE";
+//     }
+//     catch (const std::exception &e)
+//     {
+//         qDebug() << "[updateRegisterTable] EXCEPTION:" << e.what();
+//     }
+// }
+
+
 void MainWindow::updateRegisterTable()
 {
-    // qDebug() << "[updateRegisterTable] START";
     try
     {
         if (!registerPanel)
         {
-            // qDebug() << "[updateRegisterTable] ERROR: registerPanel is null!";
             return;
         }
 
         RegisterFile *registers = registerPanel->getRegisterFile();
         if (!registers)
         {
-            // qDebug() << "[updateRegisterTable] ERROR: registers is null!";
             return;
         }
 
         RegisterTable *reg_table = registerPanel->getRegTable();
-        if (!reg_table)
+        RegisterTable *fpr_table = registerPanel->getFprTable();
+
+        if (!reg_table || !fpr_table)
         {
-            // qDebug() << "[updateRegisterTable] ERROR: reg_table is null!";
+            qDebug() << "[updateRegisterTable] ERROR: tables are null!";
             return;
         }
 
         uint64_t pc_value = vm ? vm->GetProgramCounter() : 0;
-        // qDebug() << "[updateRegisterTable] PC =" << pc_value;
 
+        // INTEGER REGISTERS (32 GPRs + PC)
         QVector<quint64> reg_values;
-
-        // First add all 32 GPRs
         for (uint64_t v : registers->GetGprValues())
             reg_values << static_cast<quint64>(v);
+        reg_values << static_cast<quint64>(pc_value);  // Add PC
 
-        // Then add PC at the end
-        reg_values << static_cast<quint64>(pc_value);
+        // FLOATING POINT REGISTERS (32 FPRs + PC)
+        QVector<quint64> fpr_values;
+        for (uint64_t v : registers->GetFprValues())
+            fpr_values << static_cast<quint64>(v);
+        fpr_values << static_cast<quint64>(pc_value);  // Add PC for size match
 
-        // qDebug() << "[updateRegisterTable] reg_values.size() =" << reg_values.size();
-        // qDebug() << "[updateRegisterTable] reg_table->rowCount() =" << reg_table->rowCount();
+        qDebug() << "[updateRegisterTable] GPR values:" << reg_values.size()
+                 << "FPR values:" << fpr_values.size();
 
+        // Update both tables
         reg_table->updateAllRegisters(reg_values);
-        // qDebug() << "[updateRegisterTable] DONE";
+        fpr_table->updateAllRegisters(fpr_values);
     }
     catch (const std::exception &e)
     {
-        // qDebug() << "[updateRegisterTable] EXCEPTION:" << e.what();
+        qDebug() << "[updateRegisterTable] EXCEPTION:" << e.what();
     }
 }
 

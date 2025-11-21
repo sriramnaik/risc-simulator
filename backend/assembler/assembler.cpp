@@ -85,6 +85,7 @@ AssembledProgram Assembler::assemble(const std::string &filename) {
         // Optionally, log/emit as needed
     }
     DumpDisasssembly(globals::disassembly_file_path, program);
+    DumpErrors(globals::errors_dump_file_path, parser.getErrors());
     // std::cout << program << std::endl;
 
     // DumpNoErrors(globals::errors_dump_file_path);

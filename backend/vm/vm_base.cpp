@@ -166,7 +166,6 @@ int32_t VmBase::ImmGenerator(uint32_t instruction) {
     return imm;
 }
 
-
 void VmBase::AddBreakpoint(uint64_t val, bool is_line) {
     if (is_line) {
         // If the value is a line number, convert it to an instruction address

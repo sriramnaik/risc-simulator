@@ -1,3 +1,4 @@
+
 #include "processorwindow.h"
 #include <QFormLayout>
 #include <QHBoxLayout>

@@ -1,4 +1,6 @@
 #include "registers.h"
+#include <qdebug.h>
+#include <qlogging.h>
 #include <stdexcept>
 #include <iostream>
 
