@@ -26,7 +26,8 @@ public:
     void highlightLineForStage(const QString &stage, int sourceLine);
     void updateHighlights();
     void clearHighlightForStage(const QString &stage);
-    QMap<uint64_t, QString> pipelineLabels;
+    QMap<int, QString>  pipelineLabels;
+    const QMap<int, QString>& getPipelineLabels();
 
 protected:
     void resizeEvent(QResizeEvent *event) override;

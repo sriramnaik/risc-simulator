@@ -12,3 +12,8 @@ fmv - from floating to int checked
 fcvt - from floating to int checked
 
 when we assemble floating registers are not resetting(resolved) 
+
+1)change of register update not checking values instead make emit signal from the backend to frontend to highlight the register row.
+2) hex of showing different
+3) highlight datasegment and block pages for it.
+

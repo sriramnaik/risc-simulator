@@ -689,14 +689,10 @@ void RVSSVMPipelined::advance_pipeline_registers()
     stall_ = false;
     flush_pipeline_ = false;
 
-    // Emit pipeline stage changes for visualization
-    // qDebug() << "valid :" << mem_wb_.valid;
-    if (mem_wb_.valid == true){
-        // qDebug() <<  "emiting";
+    if (mem_wb_.valid == true) {
         emit pipelineStageChanged(mem_wb_.pc, "WB");
-    }
-    else{
-        qDebug() << "clear";
+    } else {
+        // ✅ Use a sentinel value (0) or track last PC for clearing
         emit pipelineStageChanged(0, "WB_CLEAR");
     }
 

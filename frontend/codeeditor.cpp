@@ -183,10 +183,10 @@ void CodeEditor::paintEvent(QPaintEvent *event)
                 int lineNumber = blockNumber + 1;  // 1-based line number
                 if (pipelineLabels.contains(lineNumber))
                 {
-                    QString stage = pipelineLabels[lineNumber];
+                    QString stages = pipelineLabels[lineNumber];
                     painter.setPen(Qt::white);
                     painter.setFont(font());
-                    painter.drawText(rightMargin, top + fontMetrics().ascent(), stage);
+                    painter.drawText(rightMargin, top + fontMetrics().ascent(), stages);
                 }
             }
 
@@ -210,48 +210,50 @@ void CodeEditor::goToLine(int lineNumber)
     centerCursor();
 }
 
-
 void CodeEditor::setPipelineLabel(int line, const QString &stage)
 {
-    qDebug() << stage;
+    qDebug() << "setPipelineLabel called - line:" << line << "stage:" << stage;
+
     if (stage.endsWith("_CLEAR")) {
         QString baseStage = stage.left(stage.indexOf("_CLEAR"));
-        qDebug() << baseStage;
-        // Remove the label only for the given line if the stage matches
-        if(stage == "WB_CLEAR") qDebug() << "line :"<< line << pipelineLabels.contains(line) << (pipelineLabels.value(line) == baseStage);
-        if (pipelineLabels.contains(line) && pipelineLabels.value(line) == baseStage){
-            pipelineLabels.remove(line);
-            if(stage == "WB_CLEAR") qDebug() <<  baseStage << " removed";
-        }
+        qDebug() << "CLEAR operation for stage:" << baseStage;
 
+        // Remove the label only for the given line if the stage matches
+        if (pipelineLabels.contains(line) && pipelineLabels.value(line) == baseStage) {
+            pipelineLabels.remove(line);
+            qDebug() << "Removed" << baseStage << "from line" << line;
+        } else {
+            qDebug() << "No matching label at line" << line
+                     << "- contains:" << pipelineLabels.contains(line)
+                     << "value:" << (pipelineLabels.contains(line) ? pipelineLabels.value(line) : "N/A");
+        }
         viewport()->update();
         return;
     }
 
-    if(stage == "WB_CLEAR") qDebug() << "remove already present";
-    // Remove any existing label with this stage (ensure only one instance per stage exists)
+    // ✅ FIX: Extract base stage name before comparison
+    QString baseStage = stage;
+
+    // Remove any existing label with this base stage (ensure only one instance per stage exists)
     QList<int> toRemove;
-    bool check = true;
     for (auto it = pipelineLabels.begin(); it != pipelineLabels.end(); ++it) {
-        if (it.value() == stage){
+        if (it.value() == baseStage) {  // ✅ Now comparing base stages correctly
             toRemove.append(it.key());
-            if(stage == "WB_CLEAR") qDebug() << "append to remove";
-            check= false;
+            qDebug() << "Found existing" << baseStage << "at line" << it.key();
         }
     }
-    if(check){
-       if(stage == "WB_CLEAR") qDebug() << "not append anything";
-    }
-    for (int key : toRemove){
+
+    for (int key : toRemove) {
         pipelineLabels.remove(key);
-        if(stage == "WB_CLEAR") qDebug() <<  key << " removed which present";
+        qDebug() << "Removed" << baseStage << "from line" << key;
     }
 
     // Set label for this line
-    pipelineLabels[line] = stage;
-
+    pipelineLabels[line] = baseStage;
+    qDebug() << "Set" << baseStage << "at line" << line;
     viewport()->update();
 }
+
 
 void CodeEditor::clearPipelineLabels()
 {
@@ -259,6 +261,9 @@ void CodeEditor::clearPipelineLabels()
     viewport()->update();
 }
 
-
+const QMap<int, QString>& CodeEditor::getPipelineLabels()
+{
+    return pipelineLabels;
+}
 
 

@@ -716,7 +716,7 @@ void MainWindow::onRun()
     if (speed > 30) {
         // === FAST MODE: Run in background thread ===
         executionThread_->setVM(vm);
-        executionThread_->setMaxInstructions(10000000);
+        executionThread_->setMaxInstructions(10000);
 
         editor->clearPipelineLabels();
         clearLineHighlight();
@@ -748,22 +748,22 @@ void MainWindow::onRun()
             bool stopReq = vm->IsStopRequested();
 
             // ✅ DEBUG: Print every 10 steps or near end
-            if (stepCount % 10 == 0 || pc >= progSize) {
-                qDebug() << "Step" << stepCount
-                         << "| PC:" << pc
-                         << "/ Size:" << progSize
-                         << "| Pipeline Empty:" << pipeEmpty
-                         << "| Stop Req:" << stopReq
-                         << "| Instr Retired:" << vm->instructions_retired_;
-            }
+            // if (stepCount % 10 == 0 || pc >= progSize) {
+                // qDebug() << "Step" << stepCount
+                //          << "| PC:" << pc
+                //          << "/ Size:" << progSize
+                //          << "| Pipeline Empty:" << pipeEmpty
+                //          << "| Stop Req:" << stopReq
+                //          << "| Instr Retired:" << vm->instructions_retired_;
+            // }
 
             if ((pc >= progSize && pipeEmpty) || stopReq) {
-                qDebug() << "========= EXECUTION END =========";
-                qDebug() << "Reason:" << (stopReq ? "STOP REQUESTED" : "PROGRAM END");
-                qDebug() << "Final PC:" << pc;
-                qDebug() << "Pipeline Empty:" << pipeEmpty;
-                qDebug() << "Total Steps:" << stepCount;
-                qDebug() << "=================================";
+                // qDebug() << "========= EXECUTION END =========";
+                // qDebug() << "Reason:" << (stopReq ? "STOP REQUESTED" : "PROGRAM END");
+                // qDebug() << "Final PC:" << pc;
+                // qDebug() << "Pipeline Empty:" << pipeEmpty;
+                // qDebug() << "Total Steps:" << stepCount;
+                // qDebug() << "=================================";
 
                 stepTimer->stop();
                 stepTimer->deleteLater();
@@ -1180,30 +1180,67 @@ void MainWindow::showProcessorSelection()
 
 void MainWindow::onPipelineStageChanged(uint64_t pc, QString stage)
 {
+    // CodeEditor *editor = getCurrentEditor();
+    // if (!editor)
+    //     return;
+
+    // // Convert PC to instruction index.
+    // unsigned int instrIndex = static_cast<unsigned int>(pc / 4);
+    // auto it = program.instruction_number_line_number_mapping.find(instrIndex);
+
+    // if (it == program.instruction_number_line_number_mapping.end())
+    //     return;
+
+    // unsigned int sourceLine = it->second; // 1-based
+
+    // // CLEAR stage: remove label at correct line and for specific stage.
+    // if (stage.endsWith("_CLEAR")) {
+    //     // qDebug()  << " entered CLear and sourceLine: " << sourceLine;
+    //     QString baseStage = stage.left(stage.indexOf("_CLEAR"));
+    //     editor->setPipelineLabel(sourceLine, baseStage + "_CLEAR");
+    //     return;
+    // }
+
+    // // Set or update label for this line
+    // editor->setPipelineLabel(sourceLine, stage);
+    // // qDebug() << "Pipeline label set at line" << sourceLine << ":" << stage;
+
     CodeEditor *editor = getCurrentEditor();
     if (!editor)
         return;
 
-    // Convert PC to instruction index.
-    unsigned int instrIndex = static_cast<unsigned int>(pc / 4);
-    auto it = program.instruction_number_line_number_mapping.find(instrIndex);
-
-    if (it == program.instruction_number_line_number_mapping.end())
-        return;
-
-    unsigned int sourceLine = it->second; // 1-based
-
-    // CLEAR stage: remove label at correct line and for specific stage.
     if (stage.endsWith("_CLEAR")) {
-        // qDebug()  << " entered CLear and sourceLine: " << sourceLine;
         QString baseStage = stage.left(stage.indexOf("_CLEAR"));
-        editor->setPipelineLabel(sourceLine, baseStage + "_CLEAR");
+
+        // ✅ Option 1: If PC is valid (non-zero), use it
+        if (pc != 0) {
+            unsigned int instrIndex = static_cast<unsigned int>(pc / 4);
+            auto it = program.instruction_number_line_number_mapping.find(instrIndex);
+            if (it != program.instruction_number_line_number_mapping.end()) {
+                unsigned int sourceLine = it->second;
+                editor->setPipelineLabel(sourceLine, stage);
+                return;
+            }
+        }
+
+        // ✅ Option 2: PC is 0 or invalid - clear all instances of this stage
+        QMap<int, QString> labels = editor->getPipelineLabels();
+        for (auto it = labels.begin(); it != labels.end(); ++it) {
+            if (it.value() == baseStage) {
+                editor->setPipelineLabel(it.key(), stage);
+            }
+        }
         return;
     }
 
-    // Set or update label for this line
+    // Normal stage setting
+    unsigned int instrIndex = static_cast<unsigned int>(pc / 4);
+    auto it = program.instruction_number_line_number_mapping.find(instrIndex);
+    if (it == program.instruction_number_line_number_mapping.end())
+        return;
+
+    unsigned int sourceLine = it->second;
     editor->setPipelineLabel(sourceLine, stage);
-    // qDebug() << "Pipeline label set at line" << sourceLine << ":" << stage;
 }
 
 
