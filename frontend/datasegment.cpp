@@ -84,8 +84,8 @@ DataSegment::DataSegment(QWidget *parent)
     connect(hexValuesCheckBox, &QCheckBox::toggled, this, &DataSegment::updateDisplayMode);
 
     // Stack Pointer label
-    // spLabel = new QLabel("SP: 0x00000000", this);
-    // spLabel->setStyleSheet("color: #00ff00; font-weight: bold; font-size: 9pt;");
+    spLabel = new QLabel("SP: 0x00000000", this);
+    spLabel->setStyleSheet("color: #00ff00; font-weight: bold; font-size: 9pt;");
 
     controls->addWidget(prevButton);
     controls->addWidget(nextButton);
@@ -95,7 +95,7 @@ DataSegment::DataSegment(QWidget *parent)
     controls->addWidget(hexCheckBox);
     controls->addWidget(hexValuesCheckBox);
     controls->addStretch();
-    // controls->addWidget(spLabel);
+    controls->addWidget(spLabel);
 
     mainLayout->addLayout(controls);
 
@@ -279,6 +279,10 @@ void DataSegment::updateMemory(uint64_t address, const QVector<uint8_t> &data)
 
 void DataSegment::updateStackPointer(uint64_t sp)
 {
+    if (!spLabel) {
+        qDebug() << "ERROR: spLabel is null!";
+        return;
+    }
     stackPointer = sp;
     spLabel->setText(QString("SP: 0x%1").arg(sp, 8, 16, QLatin1Char('0')).toUpper());
 }

@@ -34,6 +34,7 @@ public:
     const InstructionInfo* getInfo(const QString& mnemonic) const;
     QStringList getAllMnemonics() const;
     QStringList getCompletions(const QString& prefix) const;
+    QVector<InstructionInfo> searchInstructions(const QString& prefix) const;
 
 private:
     InstructionDatabase() { initialize(); }

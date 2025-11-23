@@ -46,6 +46,7 @@ public:
 
     RVSSControlUnit control_unit_;
     std::atomic<bool> stop_requested_ = false;
+    uint64_t instruction_pc_;
 
     std::stack<StepDelta> undo_stack_;
     std::stack<StepDelta> redo_stack_;

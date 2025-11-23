@@ -63,6 +63,7 @@ private:
     int currentTabIndex;
 
     QLabel *instructionCountLabel;
+    QLabel *cpiLabel;
     QLabel *cycleCountLabel;
     QLabel *executionTimeLabel;
 

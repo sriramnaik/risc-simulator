@@ -56,6 +56,7 @@ private:
         bool branch_taken = false;
          bool is_float = false;
         uint64_t branch_target = 0;
+         bool is_syscall = false;
     } ex_mem_, ex_mem_next_;
 
     struct MEM_WB {
@@ -65,6 +66,7 @@ private:
         uint64_t alu_result = 0, mem_data = 0;
         uint64_t pc = 0;
         bool is_float = false;
+        bool is_syscall = false;
         uint32_t instruction = 0;
     } mem_wb_, mem_wb_next_;
 
@@ -137,8 +139,8 @@ public:
     bool hazard_detection_enabled_;
     bool forwarding_enabled_;
 
-    bool branch_prediction_enabled_ = false;  // enables branch prediction (static or dynamic)
-    bool dynamic_branch_prediction_enabled_ = false; // enables dynamic mode when branch_prediction_enabled_ is true
+    bool branch_prediction_enabled_;  // enables branch prediction (static or dynamic)
+    bool dynamic_branch_prediction_enabled_; // enables dynamic mode when branch_prediction_enabled_ is true
 
     static constexpr int BHT_SIZE = 256;
     std::vector<bool> branch_history_table_;      // 1-bit dynamic predictor bits
@@ -160,6 +162,9 @@ public:
                            bool forwardingEnabled,
                            bool branchPredictionEnabled,
                            bool dynamicPredictionEnabled) override;
+
+    void DumpBranchPredictionTables(const std::filesystem::path &filepath);
+    void PrintBranchPredictionTables();
 
 private:
     std::map<std::string, uint64_t> stage_to_pc_;

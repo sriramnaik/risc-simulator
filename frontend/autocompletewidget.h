@@ -5,6 +5,7 @@
 
 #include <QListWidget>
 #include <QKeyEvent>
+#include "InstructionInfo.h"
 
 class AutoCompleteWidget : public QListWidget {
     Q_OBJECT
@@ -12,7 +13,7 @@ class AutoCompleteWidget : public QListWidget {
 public:
     explicit AutoCompleteWidget(QWidget* parent = nullptr);
 
-    void showCompletions(const QStringList& completions, const QPoint& position);
+    void showCompletions(const QVector<InstructionInfo>& instructions, const QPoint& position);
     QString getSelectedCompletion() const;
 
 signals:
@@ -22,6 +23,8 @@ signals:
 protected:
     void keyPressEvent(QKeyEvent* event) override;
     void focusOutEvent(QFocusEvent* event) override;
+    bool event(QEvent* event) override;
+    void hideEvent(QHideEvent* event)override;
 
 private slots:
     void onItemClicked(QListWidgetItem* item);

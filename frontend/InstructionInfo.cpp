@@ -428,6 +428,184 @@ void InstructionDatabase::initialize() {
         "I-Type"
         ));
 
+    // ==================== FLOATING-POINT CONVERSION ====================
+    addInstruction(InstructionInfo(
+        "fcvt.s.d", "fcvt.s.d fd, fs1",
+        "Convert Double to Single: fd = (float)fs1",
+        "Floating-Point Conversion",
+        {"fcvt.s.d f0, f1", "fcvt.s.d fa0, fa1"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fcvt.d.s", "fcvt.d.s fd, fs1",
+        "Convert Single to Double: fd = (double)fs1",
+        "Floating-Point Conversion",
+        {"fcvt.d.s f0, f1", "fcvt.d.s fa0, fa1"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fcvt.w.s", "fcvt.w.s rd, fs1",
+        "Convert Single to Word: rd = (int32_t)fs1",
+        "Floating-Point Conversion",
+        {"fcvt.w.s x1, f0", "fcvt.w.s a0, fa0"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fcvt.w.d", "fcvt.w.d rd, fs1",
+        "Convert Double to Word: rd = (int32_t)fs1",
+        "Floating-Point Conversion",
+        {"fcvt.w.d x1, f0", "fcvt.w.d a0, fa0"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fcvt.wu.s", "fcvt.wu.s rd, fs1",
+        "Convert Single to Unsigned Word: rd = (uint32_t)fs1",
+        "Floating-Point Conversion",
+        {"fcvt.wu.s x1, f0", "fcvt.wu.s a0, fa0"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fcvt.wu.d", "fcvt.wu.d rd, fs1",
+        "Convert Double to Unsigned Word: rd = (uint32_t)fs1",
+        "Floating-Point Conversion",
+        {"fcvt.wu.d x1, f0", "fcvt.wu.d a0, fa0"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fcvt.l.s", "fcvt.l.s rd, fs1",
+        "Convert Single to Long: rd = (int64_t)fs1",
+        "Floating-Point Conversion",
+        {"fcvt.l.s x1, f0", "fcvt.l.s a0, fa0"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fcvt.l.d", "fcvt.l.d rd, fs1",
+        "Convert Double to Long: rd = (int64_t)fs1",
+        "Floating-Point Conversion",
+        {"fcvt.l.d x1, f0", "fcvt.l.d a0, fa0"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fcvt.lu.s", "fcvt.lu.s rd, fs1",
+        "Convert Single to Unsigned Long: rd = (uint64_t)fs1",
+        "Floating-Point Conversion",
+        {"fcvt.lu.s x1, f0", "fcvt.lu.s a0, fa0"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fcvt.lu.d", "fcvt.lu.d rd, fs1",
+        "Convert Double to Unsigned Long: rd = (uint64_t)fs1",
+        "Floating-Point Conversion",
+        {"fcvt.lu.d x1, f0", "fcvt.lu.d a0, fa0"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fcvt.s.w", "fcvt.s.w fd, rs1",
+        "Convert Word to Single: fd = (float)(int32_t)rs1",
+        "Floating-Point Conversion",
+        {"fcvt.s.w f0, x1", "fcvt.s.w fa0, a0"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fcvt.d.w", "fcvt.d.w fd, rs1",
+        "Convert Word to Double: fd = (double)(int32_t)rs1",
+        "Floating-Point Conversion",
+        {"fcvt.d.w f0, x1", "fcvt.d.w fa0, a0"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fcvt.s.wu", "fcvt.s.wu fd, rs1",
+        "Convert Unsigned Word to Single: fd = (float)(uint32_t)rs1",
+        "Floating-Point Conversion",
+        {"fcvt.s.wu f0, x1", "fcvt.s.wu fa0, a0"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fcvt.d.wu", "fcvt.d.wu fd, rs1",
+        "Convert Unsigned Word to Double: fd = (double)(uint32_t)rs1",
+        "Floating-Point Conversion",
+        {"fcvt.d.wu f0, x1", "fcvt.d.wu fa0, a0"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fcvt.s.l", "fcvt.s.l fd, rs1",
+        "Convert Long to Single: fd = (float)(int64_t)rs1",
+        "Floating-Point Conversion",
+        {"fcvt.s.l f0, x1", "fcvt.s.l fa0, a0"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fcvt.d.l", "fcvt.d.l fd, rs1",
+        "Convert Long to Double: fd = (double)(int64_t)rs1",
+        "Floating-Point Conversion",
+        {"fcvt.d.l f0, x1", "fcvt.d.l fa0, a0"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fcvt.s.lu", "fcvt.s.lu fd, rs1",
+        "Convert Unsigned Long to Single: fd = (float)(uint64_t)rs1",
+        "Floating-Point Conversion",
+        {"fcvt.s.lu f0, x1", "fcvt.s.lu fa0, a0"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fcvt.d.lu", "fcvt.d.lu fd, rs1",
+        "Convert Unsigned Long to Double: fd = (double)(uint64_t)rs1",
+        "Floating-Point Conversion",
+        {"fcvt.d.lu f0, x1", "fcvt.d.lu fa0, a0"},
+        "R-Type"
+        ));
+
+    // ==================== FLOATING-POINT MOVE ====================
+    addInstruction(InstructionInfo(
+        "fmv.x.w", "fmv.x.w rd, fs1",
+        "Move Single from FP to Integer: rd = fs1[31:0] (bit pattern)",
+        "Floating-Point Move",
+        {"fmv.x.w x1, f0", "fmv.x.w a0, fa0"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fmv.w.x", "fmv.w.x fd, rs1",
+        "Move Single from Integer to FP: fd = rs1[31:0] (bit pattern, NaN-boxed)",
+        "Floating-Point Move",
+        {"fmv.w.x f0, x1", "fmv.w.x fa0, a0"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fmv.x.d", "fmv.x.d rd, fs1",
+        "Move Double from FP to Integer: rd = fs1[63:0] (bit pattern)",
+        "Floating-Point Move",
+        {"fmv.x.d x1, f0", "fmv.x.d a0, fa0"},
+        "R-Type"
+        ));
+
+    addInstruction(InstructionInfo(
+        "fmv.d.x", "fmv.d.x fd, rs1",
+        "Move Double from Integer to FP: fd = rs1[63:0] (bit pattern)",
+        "Floating-Point Move",
+        {"fmv.d.x f0, x1", "fmv.d.x fa0, a0"},
+        "R-Type"
+        ));
+
     // Add more instructions as needed...
 }
 
@@ -456,4 +634,24 @@ QStringList InstructionDatabase::getCompletions(const QString& prefix) const {
 
     completions.sort();
     return completions;
+}
+
+QVector<InstructionInfo> InstructionDatabase::searchInstructions(const QString& prefix) const {
+    QVector<InstructionInfo> results;
+    QString lowerPrefix = prefix.toLower();
+
+    // ✅ Iterate over QMap values correctly
+    for (auto it = instructions_.begin(); it != instructions_.end(); ++it) {
+        if (it.key().startsWith(lowerPrefix)) {
+            results.append(it.value());
+        }
+    }
+
+    // Sort by mnemonic for consistent ordering
+    std::sort(results.begin(), results.end(),
+              [](const InstructionInfo& a, const InstructionInfo& b) {
+                  return a.mnemonic < b.mnemonic;
+              });
+
+    return results;
 }

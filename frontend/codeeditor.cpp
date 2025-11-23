@@ -277,7 +277,7 @@ void CodeEditor::clearPipelineLabels(int line, const QString &stage)
         // qDebug() << "Removed line" << line << "entirely (no stages left)";
     } else {
         // qDebug() << "Removed" << stage << "from line" << line
-                 // << "- still has" << pipelineLabels[line].size() << "stages";
+        // << "- still has" << pipelineLabels[line].size() << "stages";
     }
 
     viewport()->update();

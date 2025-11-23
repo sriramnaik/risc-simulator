@@ -30,6 +30,7 @@ add_library(frontend STATIC ${FRONTEND_SOURCES}
     InstructionInfo.h
     InstructionInfo.cpp
     autocompletewidget.h autocompletewidget.cpp
+
 )
 
 # Link Qt Widgets and backend
