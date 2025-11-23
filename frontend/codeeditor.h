@@ -21,13 +21,15 @@ public:
     QMap<int, QString> getPipelineStages() const;
     // void setPipelineLabel(uint64_t pc, const QString &stage,int line);
     void setPipelineLabel(int line,const QString &stage);
-    void clearPipelineLabels();
+    void clearPipelineLabels(int line,const QString &stage);
     QMap<QString, int> stageHighlights;   // stage -> line
     void highlightLineForStage(const QString &stage, int sourceLine);
     void updateHighlights();
     void clearHighlightForStage(const QString &stage);
-    QMap<int, QString>  pipelineLabels;
-    const QMap<int, QString>& getPipelineLabels();
+    void clearAllPipelineLabels();
+    // QMap<int, QString>  pipelineLabels;
+
+    const QMap<int, QSet<QString>>& getPipelineLabels();
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
@@ -39,6 +41,7 @@ private slots:
 
 private:
     QWidget *lineNumberArea;
+    QMap<int, QSet<QString>> pipelineLabels;
     void paintPipelineStages(QPainter &painter, const QRect &rect);
 
 };

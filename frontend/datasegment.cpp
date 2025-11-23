@@ -84,8 +84,8 @@ DataSegment::DataSegment(QWidget *parent)
     connect(hexValuesCheckBox, &QCheckBox::toggled, this, &DataSegment::updateDisplayMode);
 
     // Stack Pointer label
-    spLabel = new QLabel("SP: 0x00000000", this);
-    spLabel->setStyleSheet("color: #00ff00; font-weight: bold; font-size: 9pt;");
+    // spLabel = new QLabel("SP: 0x00000000", this);
+    // spLabel->setStyleSheet("color: #00ff00; font-weight: bold; font-size: 9pt;");
 
     controls->addWidget(prevButton);
     controls->addWidget(nextButton);
@@ -95,7 +95,7 @@ DataSegment::DataSegment(QWidget *parent)
     controls->addWidget(hexCheckBox);
     controls->addWidget(hexValuesCheckBox);
     controls->addStretch();
-    controls->addWidget(spLabel);
+    // controls->addWidget(spLabel);
 
     mainLayout->addLayout(controls);
 
@@ -218,14 +218,14 @@ void DataSegment::populateTable()
                 QTableWidgetItem *item = new QTableWidgetItem(text);
 
                 // Color non-zero values differently
-                if (val != 0)
-                {
+
+                // {
                     item->setForeground(QBrush(QColor(255, 255, 255))); // White
-                }
-                else
-                {
-                    item->setForeground(QBrush(QColor(120, 120, 120))); // Gray
-                }
+                // }
+                // else
+                // {
+                //     item->setForeground(QBrush(QColor(120, 120, 120))); // Gray
+                // }
 
                 memoryTable->setItem(r, c + 1, item);
             }
@@ -241,8 +241,6 @@ void DataSegment::populateTable()
 
 void DataSegment::updateMemory(uint64_t address, const QVector<uint8_t> &data)
 {
-    // qDebug() << "[DataSegment] updateMemory: address =" << Qt::hex << address << "size =" << data.size();
-
     // Store byte data
     for (int i = 0; i < data.size(); i++)
     {

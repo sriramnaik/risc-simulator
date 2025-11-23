@@ -161,6 +161,7 @@ void CodeEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
 
 void CodeEditor::paintEvent(QPaintEvent *event)
 {
+
     QPlainTextEdit::paintEvent(event);
 
     if (!pipelineLabels.isEmpty())
@@ -168,31 +169,51 @@ void CodeEditor::paintEvent(QPaintEvent *event)
         QPainter painter(viewport());
         QTextBlock block = firstVisibleBlock();
         int blockNumber = block.blockNumber();
+        int top = qRound(blockBoundingGeometry(block).translated(contentOffset()).top());
+        int bottom = top + qRound(blockBoundingRect(block).height());
 
-        int top = static_cast<int>(blockBoundingGeometry(block)
-                                       .translated(contentOffset())
-                                       .top());
-        int bottom = top + static_cast<int>(blockBoundingRect(block).height());
+        while (block.isValid() && top <= event->rect().bottom()) {
+            if (block.isVisible() && bottom >= event->rect().top()) {
+                int lineNumber = blockNumber + 1; // 1-based
 
-        int rightMargin = viewport()->width() - 50; // adjust spacing as needed
+                // ✅ Check if this line has any pipeline stages
+                if (pipelineLabels.contains(lineNumber)) {
+                    const QSet<QString>& stages = pipelineLabels[lineNumber];
 
-        while (block.isValid() && top <= event->rect().bottom())
-        {
-            if (block.isVisible() && bottom >= event->rect().top())
-            {
-                int lineNumber = blockNumber + 1;  // 1-based line number
-                if (pipelineLabels.contains(lineNumber))
-                {
-                    QString stages = pipelineLabels[lineNumber];
-                    painter.setPen(Qt::white);
-                    painter.setFont(font());
-                    painter.drawText(rightMargin, top + fontMetrics().ascent(), stages);
+                    // Build ordered stage list
+                    QStringList stageOrder = {"IF", "ID", "EX", "MEM", "WB"};
+                    QStringList orderedStages;
+
+                    for (const QString& stageName : stageOrder) {
+                        if (stages.contains(stageName)) {
+                            orderedStages.append(stageName);
+                        }
+                    }
+
+                    // ✅ Draw stages from right to left with proper spacing
+                    if (!orderedStages.isEmpty()) {
+                        painter.setPen(Qt::white);
+
+                        QFontMetrics fm(font());
+                        int xOffset = 0;
+
+                        // Draw in reverse order (right to left)
+                        for (int i = orderedStages.size() - 1; i >= 0; --i) {
+                            const QString& stageName = orderedStages[i];
+                            int stageWidth = fm.horizontalAdvance(stageName);
+
+                            int xPos = viewport()->width() - 50 - xOffset - stageWidth;
+                            painter.drawText(xPos, top + fm.ascent(), stageName);
+
+                            xOffset += stageWidth + 10; // 10px spacing between stages
+                        }
+                    }
                 }
             }
 
             block = block.next();
             top = bottom;
-            bottom = top + static_cast<int>(blockBoundingRect(block).height());
+            bottom = top + qRound(blockBoundingRect(block).height());
             ++blockNumber;
         }
     }
@@ -212,56 +233,57 @@ void CodeEditor::goToLine(int lineNumber)
 
 void CodeEditor::setPipelineLabel(int line, const QString &stage)
 {
-    qDebug() << "setPipelineLabel called - line:" << line << "stage:" << stage;
+    // qDebug() << "setPipelineLabel - line:" << line << "stage:" << stage;
 
     if (stage.endsWith("_CLEAR")) {
         QString baseStage = stage.left(stage.indexOf("_CLEAR"));
-        qDebug() << "CLEAR operation for stage:" << baseStage;
-
-        // Remove the label only for the given line if the stage matches
-        if (pipelineLabels.contains(line) && pipelineLabels.value(line) == baseStage) {
-            pipelineLabels.remove(line);
-            qDebug() << "Removed" << baseStage << "from line" << line;
-        } else {
-            qDebug() << "No matching label at line" << line
-                     << "- contains:" << pipelineLabels.contains(line)
-                     << "value:" << (pipelineLabels.contains(line) ? pipelineLabels.value(line) : "N/A");
-        }
-        viewport()->update();
+        clearPipelineLabels(line, baseStage);
         return;
     }
 
-    // ✅ FIX: Extract base stage name before comparison
-    QString baseStage = stage;
-
-    // Remove any existing label with this base stage (ensure only one instance per stage exists)
-    QList<int> toRemove;
-    for (auto it = pipelineLabels.begin(); it != pipelineLabels.end(); ++it) {
-        if (it.value() == baseStage) {  // ✅ Now comparing base stages correctly
-            toRemove.append(it.key());
-            qDebug() << "Found existing" << baseStage << "at line" << it.key();
-        }
+    // ✅ Add this stage to the set for this line
+    if (!pipelineLabels.contains(line)) {
+        pipelineLabels[line] = QSet<QString>();
     }
+    pipelineLabels[line].insert(stage);
 
-    for (int key : toRemove) {
-        pipelineLabels.remove(key);
-        qDebug() << "Removed" << baseStage << "from line" << key;
-    }
+    // qDebug() << "Added" << stage << "to line" << line
+    //          << "- now has" << pipelineLabels[line].size() << "stages";
 
-    // Set label for this line
-    pipelineLabels[line] = baseStage;
-    qDebug() << "Set" << baseStage << "at line" << line;
     viewport()->update();
 }
 
-
-void CodeEditor::clearPipelineLabels()
+void CodeEditor::clearAllPipelineLabels()
 {
     pipelineLabels.clear();
     viewport()->update();
 }
 
-const QMap<int, QString>& CodeEditor::getPipelineLabels()
+void CodeEditor::clearPipelineLabels(int line, const QString &stage)
+{
+    // qDebug() << "clearPipelineLabel - line:" << line << "stage:" << stage;
+
+    if (!pipelineLabels.contains(line)) {
+        // qDebug() << "Line" << line << "has no labels";
+        return;
+    }
+
+    // Remove this specific stage from the line
+    pipelineLabels[line].remove(stage);
+
+    // If no stages left, remove the line entry entirely
+    if (pipelineLabels[line].isEmpty()) {
+        pipelineLabels.remove(line);
+        // qDebug() << "Removed line" << line << "entirely (no stages left)";
+    } else {
+        // qDebug() << "Removed" << stage << "from line" << line
+                 // << "- still has" << pipelineLabels[line].size() << "stages";
+    }
+
+    viewport()->update();
+}
+
+const QMap<int, QSet<QString> > &CodeEditor::getPipelineLabels()
 {
     return pipelineLabels;
 }

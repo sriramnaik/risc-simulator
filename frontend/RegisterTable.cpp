@@ -19,7 +19,7 @@ RegisterTable::RegisterTable(QWidget *parent)
     horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
     horizontalHeader()->setSectionResizeMode(2, QHeaderView::Fixed);
 
-    int charWidth = fontMetrics().horizontalAdvance("0x0000000000000000") + fontMetrics().horizontalAdvance("000");
+    int charWidth = fontMetrics().horizontalAdvance("0x 0000 0000 0000 0000") + fontMetrics().horizontalAdvance("000");
     horizontalHeader()->resizeSection(2, charWidth);
 
     verticalHeader()->setVisible(false);
@@ -34,6 +34,12 @@ RegisterTable::RegisterTable(QWidget *parent)
         "QHeaderView::section { background-color: #252526; color: white; padding: 4px; }"
         "QTableWidget::item:selected { background: #3a3d41; }"
         "QTableWidget::item { padding: 2px; }");
+
+    valueFont = QFont("Courier New");
+    valueFont.setStyleHint(QFont::Monospace);
+    valueFont.setFixedPitch(true);
+    valueFont.setPointSize(10);
+
 }
 
 void RegisterTable::setRegisterType(RegisterType type)
@@ -55,7 +61,10 @@ void RegisterTable::initialize(const QStringList &regNames)
         QString reg = regNames[i];
         setItem(i, 0, new QTableWidgetItem(reg.section(":", 0, 0)));
         setItem(i, 1, new QTableWidgetItem(reg.section(":", 1, 1)));
-        setItem(i, 2, new QTableWidgetItem(" 0x 0000 0000 0000 0000"));
+        auto *valItem = new QTableWidgetItem(" 0x 0000 0000 0000 0000");
+        valItem->setFont(valueFont);
+        setItem(i, 2, valItem);
+
         applyAlternatingRowColor(i);
 
         item(i, 0)->setTextAlignment(Qt::AlignCenter);
@@ -67,7 +76,11 @@ void RegisterTable::initialize(const QStringList &regNames)
     int pcRow = regNames.size();
     setItem(pcRow, 0, new QTableWidgetItem("PC"));
     setItem(pcRow, 1, new QTableWidgetItem("-"));
-    setItem(pcRow, 2, new QTableWidgetItem(" 0x 0000 0000 0040 0000"));
+
+    auto *pcVal = new QTableWidgetItem(" 0x 0000 0000 0000 0000");
+    pcVal->setFont(valueFont);
+    setItem(pcRow, 2, pcVal);
+
     applyAlternatingRowColor(pcRow);
 
     item(pcRow, 0)->setTextAlignment(Qt::AlignCenter);
@@ -89,7 +102,6 @@ QWidget *RegisterTable::createDisplayTypeSelector()
 
     QComboBox *combo = new QComboBox();
 
-    // ✅ CHANGED: Different options based on register type
     if (registerType == RegisterType::Integer) {
         combo->addItem("Hex");
         combo->addItem("Unsigned");
@@ -150,6 +162,7 @@ void RegisterTable::updateRegister(int index, quint64 value)
         QString formatted = formatValue(value);
         // qDebug() << "[updateRegister] formatValue=" << formatted;
         valueItem->setText(formatted);
+        valueItem->setFont(valueFont);
     }
     else
     {
@@ -202,8 +215,10 @@ void RegisterTable::updateAllDisplayValues()
     for (int i = 0; i < registerValues.size(); ++i)
     {
         auto *valueItem = item(i, 2);
-        if (valueItem)
+        if (valueItem){
             valueItem->setText(formatValue(registerValues[i]));
+            valueItem->setFont(valueFont);
+        }
     }
     setUpdatesEnabled(true);
     viewport()->update();
@@ -221,113 +236,7 @@ void RegisterTable::applyAlternatingRowColor(int index)
     }
 }
 
-QString RegisterTable::formatValue(quint64 value) const
-{
-    switch (displayType)
-    {
-    case DisplayType::Hex:
-    {
-        if (registerType == RegisterType::FloatingPoint) {
-            // For FPR in Hex mode, show as single-precision (32-bit) hex by default
-            // This matches how RISC-V F extension stores floats
-            quint32 lo = static_cast<quint32>(value & 0xFFFFFFFF);
-            QString hex = QString("%1").arg(lo, 8, 16, QLatin1Char('0'));
-            QString grouped;
-            for (int i = 0; i < hex.length(); ++i) {
-                if (i > 0 && i % 4 == 0) grouped += " ";
-                grouped += hex[i];
-            }
-            return " 0x " + grouped.toUpper();
-        } else {
-            // Integer register - full 64-bit
-            QString hex = QString("%1").arg(value, 16, 16, QLatin1Char('0'));
-            QString grouped;
-            for (int i = 0; i < hex.length(); ++i) {
-                if (i > 0 && i % 4 == 0) grouped += " ";
-                grouped += hex[i];
-            }
-            return " 0x " + grouped.toUpper();
-        }
-    }
-
-    case DisplayType::Unsigned:
-        if (registerType == RegisterType::Integer) {
-            return QString(" %1").arg(value);
-        }
-        // For float, fall through to hex
-        return formatFloatAsHex(value, true);
-
-    case DisplayType::Signed:
-        if (registerType == RegisterType::Integer) {
-            return QString(" %1").arg(static_cast<qint64>(value));
-        }
-        return formatFloatAsHex(value, true);
-
-    case DisplayType::Float:
-    {
-        // Single precision: interpret lower 32 bits as IEEE 754 float
-        float f;
-        quint32 bits = static_cast<quint32>(value & 0xFFFFFFFF);
-        memcpy(&f, &bits, sizeof(f));
-
-        // Check for special values
-        quint32 exp = (bits >> 23) & 0xFF;
-        quint32 mant = bits & 0x7FFFFF;
-
-        if (exp == 0xFF && mant != 0) return QString(" NaN [0x%1]").arg(bits, 8, 16, QLatin1Char('0')).toUpper();
-        if (exp == 0xFF && mant == 0) return (bits >> 31) ? QString(" -Inf [0x%1]").arg(bits, 8, 16, QLatin1Char('0')).toUpper()
-                                : QString(" +Inf [0x%1]").arg(bits, 8, 16, QLatin1Char('0')).toUpper();
-        if (exp == 0 && mant == 0) return (bits >> 31) ? QString(" -0.0 [0x%1]").arg(bits, 8, 16, QLatin1Char('0')).toUpper()
-                                : QString(" 0.0 [0x%1]").arg(bits, 8, 16, QLatin1Char('0')).toUpper();
-
-        // Normal number: show value + hex
-        return QString(" %1 [0x%2]")
-            .arg(static_cast<double>(f), 0, 'g', 8)
-            .arg(bits, 8, 16, QLatin1Char('0')).toUpper();
-    }
-
-    case DisplayType::Double:
-    {
-        // Double precision: interpret full 64 bits as IEEE 754 double
-        double d;
-        memcpy(&d, &value, sizeof(d));
-
-        // Check for special values
-        quint64 exp = (value >> 52) & 0x7FF;
-        quint64 mant = value & 0xFFFFFFFFFFFFF;
-
-        if (exp == 0x7FF && mant != 0) return QString(" NaN [0x%1]").arg(value, 16, 16, QLatin1Char('0')).toUpper();
-        if (exp == 0x7FF && mant == 0) return (value >> 63) ? QString(" -Inf [0x%1]").arg(value, 16, 16, QLatin1Char('0')).toUpper()
-                                 : QString(" +Inf [0x%1]").arg(value, 16, 16, QLatin1Char('0')).toUpper();
-        if (exp == 0 && mant == 0) return (value >> 63) ? QString(" -0.0 [0x%1]").arg(value, 16, 16, QLatin1Char('0')).toUpper()
-                                 : QString(" 0.0 [0x%1]").arg(value, 16, 16, QLatin1Char('0')).toUpper();
-
-        // Normal number
-        return QString(" %1 [0x%2]")
-            .arg(d, 0, 'g', 15)
-            .arg(value, 16, 16, QLatin1Char('0')).toUpper();
-    }
-
-    case DisplayType::IEEE754:
-    {
-        // Show IEEE 754 component breakdown for single precision
-        quint32 bits = static_cast<quint32>(value & 0xFFFFFFFF);
-        quint32 sign = (bits >> 31) & 0x1;
-        quint32 exp = (bits >> 23) & 0xFF;
-        quint32 mant = bits & 0x7FFFFF;
-
-        return QString(" S:%1 E:%2 M:%3")
-            .arg(sign)
-            .arg(exp, 3, 10, QLatin1Char('0'))
-            .arg(mant, 6, 16, QLatin1Char('0')).toUpper();
-    }
-
-    default:
-        return QString(" 0x%1").arg(value, 16, 16, QLatin1Char('0')).toUpper();
-    }
-}
-
-// Helper function for hex display
+// // Helper function for hex display
 QString RegisterTable::formatFloatAsHex(quint64 value, bool singlePrecision) const
 {
     if (singlePrecision) {
@@ -337,10 +246,6 @@ QString RegisterTable::formatFloatAsHex(quint64 value, bool singlePrecision) con
         return QString(" 0x%1").arg(value, 16, 16, QLatin1Char('0')).toUpper();
     }
 }
-
-// ============================================================
-// Add tooltip support for detailed IEEE 754 view
-// ============================================================
 
 QString RegisterTable::getFloatTooltip(quint64 value) const
 {
@@ -429,4 +334,129 @@ void RegisterTable::reset()
     // Force display update
     updateAllDisplayValues();
     viewport()->update();
+}
+
+QString RegisterTable::formatValue(quint64 value) const
+{
+    switch (displayType)
+    {
+    case DisplayType::Hex:
+    {
+        // ✅ ALWAYS show full 64-bit hex for both integer and floating-point registers
+        QString hex = QString("%1").arg(value, 16, 16, QLatin1Char('0'));
+        QString grouped;
+        for (int i = 0; i < hex.length(); ++i) {
+            if (i > 0 && i % 4 == 0) grouped += " ";
+            grouped += hex[i];
+        }
+        return " 0x " + grouped.toUpper();
+    }
+
+    case DisplayType::Unsigned:
+        if (registerType == RegisterType::Integer) {
+            return QString(" %1").arg(value);
+        }
+        // For float registers in "Unsigned" mode, show hex
+        return formatValue(value); // Fall back to hex
+
+    case DisplayType::Signed:
+        if (registerType == RegisterType::Integer) {
+            return QString(" %1").arg(static_cast<qint64>(value));
+        }
+        // For float registers in "Signed" mode, show hex
+        return formatValue(value); // Fall back to hex
+
+    case DisplayType::Float:
+    {
+        // ✅ Single precision: interpret lower 32 bits as IEEE 754 float
+        // This handles NaN-boxed values correctly (upper 32 bits = 0xFFFFFFFF)
+        float f;
+        quint32 bits = static_cast<quint32>(value & 0xFFFFFFFF);
+        memcpy(&f, &bits, sizeof(f));
+
+        // Check for special values
+        quint32 exp = (bits >> 23) & 0xFF;
+        quint32 mant = bits & 0x7FFFFF;
+        quint32 sign = (bits >> 31) & 0x1;
+
+        // Check if it's a valid NaN-boxed single-precision value
+        quint32 upper = static_cast<quint32>(value >> 32);
+        bool isNaNBoxed = (upper == 0xFFFFFFFF);
+
+        QString prefix = isNaNBoxed ? " " : " ";
+
+        // ✅ Always show full 64-bit hex in brackets
+        QString hexStr = QString("0x%1").arg(value, 16, 16, QLatin1Char('0')).toUpper();
+
+        if (exp == 0xFF && mant != 0) {
+            return prefix + QString("NaN");
+        }
+        if (exp == 0xFF && mant == 0) {
+            return prefix + (sign ? QString("-Inf") : QString("+Inf [%1]"));
+        }
+        if (exp == 0 && mant == 0) {
+            return prefix + (sign ? QString("-0.0") : QString("0.0"));
+        }
+        if (exp == 0) {
+            // Denormalized
+            return prefix + QString("%1 (denorm)")
+                                .arg(static_cast<double>(f), 0, 'e', 6);
+        }
+
+        // Normal number: show value + full 64-bit hex
+        return prefix + QString("%1")
+                            .arg(static_cast<double>(f), 0, 'g', 8);
+    }
+
+    case DisplayType::Double:
+    {
+        // ✅ Double precision: interpret full 64 bits as IEEE 754 double
+        double d;
+        memcpy(&d, &value, sizeof(d));
+
+        // Check for special values
+        quint64 exp = (value >> 52) & 0x7FF;
+        quint64 mant = value & 0xFFFFFFFFFFFFF;
+        quint64 sign = (value >> 63) & 0x1;
+
+        // ✅ Always show full 64-bit hex in brackets
+        QString hexStr = QString("0x%1").arg(value, 16, 16, QLatin1Char('0')).toUpper();
+
+        if (exp == 0x7FF && mant != 0) {
+            return QString(" NaN");
+        }
+        if (exp == 0x7FF && mant == 0) {
+            return (sign ? QString(" -Inf") : QString(" +Inf"));
+        }
+        if (exp == 0 && mant == 0) {
+            return (sign ? QString(" -0.0]") : QString(" 0.0"));
+        }
+        if (exp == 0) {
+            // Denormalized
+            return QString(" %1 (denorm)")
+                .arg(d, 0, 'e', 15);
+        }
+
+        // Normal number: show value + full 64-bit hex
+        return QString(" %1")
+            .arg(d, 0, 'g', 15);
+    }
+
+    case DisplayType::IEEE754:
+    {
+        // Show IEEE 754 component breakdown for single precision (lower 32 bits)
+        quint32 bits = static_cast<quint32>(value & 0xFFFFFFFF);
+        quint32 sign = (bits >> 31) & 0x1;
+        quint32 exp = (bits >> 23) & 0xFF;
+        quint32 mant = bits & 0x7FFFFF;
+
+        return QString(" S:%1 E:%2 M:%3")
+            .arg(sign)
+            .arg(exp, 3, 10, QLatin1Char('0'))
+            .arg(mant, 6, 16, QLatin1Char('0')).toUpper();
+    }
+
+    default:
+        return QString(" 0x%1").arg(value, 16, 16, QLatin1Char('0')).toUpper();
+    }
 }

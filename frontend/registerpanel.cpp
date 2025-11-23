@@ -33,9 +33,9 @@ RegisterPanel::RegisterPanel(QWidget *parent)
         intNames << QString("x%1:%2").arg(i).arg(names[i]);
     intRegs->initialize(intNames);
 
-    intRegs->setColumnWidth(0, 100);
-    intRegs->setColumnWidth(1, 100);
-    intRegs->setColumnWidth(2, 160);
+    intRegs->setColumnWidth(0, 90);
+    intRegs->setColumnWidth(1, 90);
+    intRegs->setColumnWidth(2, 200);
     intRegs->verticalHeader()->setDefaultSectionSize(22);
 
     // Integer control panel
@@ -95,9 +95,9 @@ RegisterPanel::RegisterPanel(QWidget *parent)
     }
     floatRegs->initialize(floatNames);
 
-    floatRegs->setColumnWidth(0, 100);
-    floatRegs->setColumnWidth(1, 100);
-    floatRegs->setColumnWidth(2, 160);
+    floatRegs->setColumnWidth(0, 90);
+    floatRegs->setColumnWidth(1, 90);
+    floatRegs->setColumnWidth(2, 200);
     floatRegs->verticalHeader()->setDefaultSectionSize(22);
 
     // Float control panel

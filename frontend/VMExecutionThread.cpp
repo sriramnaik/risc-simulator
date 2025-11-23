@@ -71,7 +71,7 @@ void VMExecutionThread::run()
             bool pipelineEmpty = vm_->IsPipelineEmpty();
 
             if (atEnd && pipelineEmpty) {
-                qDebug() << "[VMExecutionThread] Execution complete - PC at end and pipeline empty";
+                // qDebug() << "[VMExecutionThread] Execution complete - PC at end and pipeline empty";
                 break;
             }
 
@@ -122,7 +122,7 @@ void VMExecutionThread::run()
                     .arg(vm_->cycle_s_)
                 );
         } else {
-            qDebug() << "[VMExecutionThread] Normal completion";
+            // qDebug() << "[VMExecutionThread] Normal completion";
         }
 
         emit executionFinished(vm_->instructions_retired_, vm_->cycle_s_);

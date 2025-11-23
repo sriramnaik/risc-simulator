@@ -61,6 +61,7 @@ private:
     QBrush evenBrush;
     QBrush oddBrush;
     QBrush highlightBrush;
+    QFont valueFont;
 
     QString formatFloatAsHex(quint64 value, bool singlePrecision) const;
     QString getFloatTooltip(quint64 value) const;

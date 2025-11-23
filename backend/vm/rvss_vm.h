@@ -86,6 +86,7 @@ public:
     bool IsStopRequested() const { return stop_requested_; }
     void ClearStop() { stop_requested_ = false; }
     void PrintType() { std::cout << "rvssvm" << std::endl; }
+    void advance_pipeline_registers() {return;}
 
     std::vector<uint8_t> GetMemoryRange(uint64_t address, size_t size) {
         std::vector<uint8_t> data;

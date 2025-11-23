@@ -63,7 +63,7 @@ public:
     alu::Alu alu_;
 
 
-    void LoadProgram(const AssembledProgram &program);
+    virtual void LoadProgram(const AssembledProgram &program);
     uint64_t program_size_ = 0;
 
     uint64_t GetProgramCounter() const;

@@ -110,12 +110,13 @@ private:
     void MEM_stage();
     void WB_stage();
 
-    void advance_pipeline_registers();
+    // void advance_pipeline_registers();
 
 public:
     explicit RVSSVMPipelined(RegisterFile *sharedRegisters, QObject *parent = nullptr);
     ~RVSSVMPipelined() override;
 
+    void LoadProgram(const AssembledProgram& program) override;
     QMap<uint64_t, int> pcToLineMap;
     void setPcToLineMap(const QMap<uint64_t, int>& map) { pcToLineMap = map; }
     bool IsPipelineEmpty() const override;
@@ -154,10 +155,14 @@ public:
     bool flush_pipeline_;
 
     void DumpPipelineState();
+    void advance_pipeline_registers();
     void SetPipelineConfig(bool hazardEnabled,
                            bool forwardingEnabled,
                            bool branchPredictionEnabled,
                            bool dynamicPredictionEnabled) override;
+
+private:
+    std::map<std::string, uint64_t> stage_to_pc_;
 
 signals:
     void pipelineStageChanged(uint64_t pc, QString stageName);

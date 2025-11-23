@@ -10,6 +10,8 @@
 #include <cmath>
 #include <cstdint>
 #include <ostream>
+#include <qdebug.h>
+#include <sstream>
 
 // #pragma float_control(precise, on)
 // #pragma STDC FENV_ACCESS ON
@@ -201,6 +203,14 @@ inline std::ostream& operator<<(std::ostream& os, const AluOp& op) {
     }
     return os;
 }
+
+inline std::string to_string(AluOp op)
+{
+    std::stringstream ss;
+    ss << op;
+    return ss.str();
+}
+
 /**
  * @brief The alu class is responsible for performing arithmetic and logic operations.
  */

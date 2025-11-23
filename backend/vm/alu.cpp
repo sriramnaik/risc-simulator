@@ -212,7 +212,9 @@ namespace alu {
                                                           uint64_t inb,
                                                           uint64_t inc,
                                                           uint8_t rm) {
-    std::cout << op << "\n";
+
+    qDebug() << QString::fromStdString(to_string(op));
+
   float a, b, c;
   std::memcpy(&a, &ina, sizeof(float));
   std::memcpy(&b, &inb, sizeof(float));
@@ -480,7 +482,7 @@ namespace alu {
   if (raised & FE_INEXACT) fcsr |= FCSR_INEXACT;
 
   std::fesetround(original_rm);
-  qDebug() << result;
+  // qDebug() << result;
   uint32_t result_bits = 0;
   std::memcpy(&result_bits, &result, sizeof(result));
   return {static_cast<uint64_t>(result_bits), fcsr};

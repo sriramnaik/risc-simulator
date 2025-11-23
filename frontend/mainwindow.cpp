@@ -80,8 +80,8 @@ MainWindow::MainWindow(QWidget *parent)
     QAction *assembleAction = new QAction(QIcon("icons/processo.png"), "Assemble", this);
     QAction *runAction = new QAction(QIcon("icons/run.png"), "Run", this);
     QAction *stepAction = new QAction(QIcon("icons/step.png"), "Step", this);
-    QAction *undoAction = new QAction(QIcon("icons/undo.png"),"Undo",this);
-    QAction *resetAction = new QAction(QIcon("icons/reset.png"),"reset",this);
+    QAction *undoAction = new QAction(QIcon("icons/undo.png"), "Undo", this);
+    QAction *resetAction = new QAction(QIcon("icons/reset.png"), "reset", this);
     QAction *pauseAction = new QAction(QIcon("icons/pause.png"), "Pause", this);
     QAction *stopAction = new QAction(QIcon("icons/stop.png"), "Stop", this);
 
@@ -211,15 +211,14 @@ MainWindow::MainWindow(QWidget *parent)
     QStatusBar *statusBar = new QStatusBar(this);
     statusBar->setStyleSheet("QStatusBar { background-color: #3e3e42; color: #cccccc; border: none; }");
     processorInfoLabel = new QLabel(
-        QString("Processor: %1 | ISA: %2").arg(lastName, lastISA)
-        );
+        QString("Processor: %1 | ISA: %2").arg(lastName, lastISA));
     processorInfoLabel->setStyleSheet("color: #cccccc; font-size: 9pt; padding: 2px 10px;");
     statusBar->addPermanentWidget(processorInfoLabel);
     setStatusBar(statusBar);
 
     assembler = new Assembler(registerPanel->getRegisterFile(), this);
     singleCycleVm = new RVSSVM(registerPanel->getRegisterFile(), this);
-    pipelinedVm = new RVSSVMPipelined(registerPanel->getRegisterFile(),this);
+    pipelinedVm = new RVSSVMPipelined(registerPanel->getRegisterFile(), this);
     vm = singleCycleVm;
     errorconsole = bottomPanel->getConsole();
     DataSegment *dataSegment = bottomPanel->getDataSegment();
@@ -595,7 +594,8 @@ void MainWindow::onAssemble()
     }
 
     // ✅ STOP any running execution before assembling
-    if (executionThread_ && executionThread_->isRunning()) {
+    if (executionThread_ && executionThread_->isRunning())
+    {
         executionThread_->requestStop();
         executionThread_->wait(2000);
         updateTimer_->stop();
@@ -616,7 +616,8 @@ void MainWindow::onAssemble()
             return;
     }
 
-    if (registerPanel) {
+    if (registerPanel)
+    {
         registerPanel->resetAllTables();
     }
 
@@ -626,8 +627,9 @@ void MainWindow::onAssemble()
         return;
     }
 
-    if (editor) {
-        editor->clearPipelineLabels();
+    if (editor)
+    {
+        editor->clearAllPipelineLabels();
     }
 
     std::string cppFilePath = filePath.toStdString();
@@ -646,7 +648,7 @@ void MainWindow::onAssemble()
         vm->LoadProgram(program);
 
         uint64_t dataSegmentBase = 0x10000000;
-        size_t memorySize = 512;
+        size_t memorySize = 1024 *  1024;
 
         DataSegment *dataSegment = bottomPanel->getDataSegment();
         std::vector<uint8_t> memoryBytes = vm->GetMemoryRange(dataSegmentBase, memorySize);
@@ -670,7 +672,8 @@ void MainWindow::onAssemble()
         updateExecutionInfo();
         highlightCurrentLine();
     }
-    else {
+    else
+    {
         bottomPanel->changeTab();
     }
 }
@@ -678,23 +681,27 @@ void MainWindow::onAssemble()
 void MainWindow::onRun()
 {
     CodeEditor *editor = getCurrentEditor();
-    if (!editor) {
+    if (!editor)
+    {
         QMessageBox::warning(this, "Warning", "No file is open!");
         return;
     }
 
-    if (!vm) {
+    if (!vm)
+    {
         QMessageBox::critical(this, "Error", "VM not initialized!");
         return;
     }
 
-    if (program.errorCount != 0) {
+    if (program.errorCount != 0)
+    {
         QMessageBox::warning(this, "Assembly Error",
                              "Please fix assembly errors before running.");
         return;
     }
 
-    if (executionThread_ && executionThread_->isRunning()) {
+    if (executionThread_ && executionThread_->isRunning())
+    {
         QMessageBox::information(this, "Info", "Execution already in progress!");
         return;
     }
@@ -706,19 +713,20 @@ void MainWindow::onRun()
 
     // ✅ DEBUG: Check VM type and initial state
     RVSSVMPipelined *pipeVm = qobject_cast<RVSSVMPipelined *>(vm);
-    qDebug() << "========= EXECUTION START =========";
-    qDebug() << "VM Type:" << (pipeVm ? "PIPELINED" : "SINGLE-CYCLE");
-    qDebug() << "Program Size:" << vm->GetProgramSize();
-    qDebug() << "Initial PC:" << vm->GetProgramCounter();
-    qDebug() << "Pipeline Empty:" << vm->IsPipelineEmpty();
-    qDebug() << "===================================";
+    // qDebug() << "========= EXECUTION START =========";
+    // qDebug() << "VM Type:" << (pipeVm ? "PIPELINED" : "SINGLE-CYCLE");
+    // qDebug() << "Program Size:" << vm->GetProgramSize();
+    // qDebug() << "Initial PC:" << vm->GetProgramCounter();
+    // qDebug() << "Pipeline Empty:" << vm->IsPipelineEmpty();
+    // qDebug() << "===================================";
 
-    if (speed > 30) {
+    if (speed > 30)
+    {
         // === FAST MODE: Run in background thread ===
         executionThread_->setVM(vm);
         executionThread_->setMaxInstructions(10000);
 
-        editor->clearPipelineLabels();
+        editor->clearAllPipelineLabels();
         clearLineHighlight();
         updateExecutionInfo();
 
@@ -726,10 +734,11 @@ void MainWindow::onRun()
         updateTimer_->start(100);
 
         statusBar()->showMessage("Running in background...", 0);
-
-    } else {
+    }
+    else
+    {
         // === ANIMATED MODE: Step-by-step with timer ===
-        editor->clearPipelineLabels();
+        editor->clearAllPipelineLabels();
         clearLineHighlight();
         updateExecutionInfo();
 
@@ -739,7 +748,8 @@ void MainWindow::onRun()
         // ✅ DEBUG counter
         int stepCount = 0;
 
-        connect(stepTimer, &QTimer::timeout, this, [this, stepTimer, &stepCount, pipeVm]() {
+        connect(stepTimer, &QTimer::timeout, this, [this, stepTimer, &stepCount, pipeVm]()
+                {
             stepCount++;
 
             uint64_t pc = vm->GetProgramCounter();
@@ -781,8 +791,7 @@ void MainWindow::onRun()
             vm->Step();
             updateRegisterTable();
             highlightCurrentLine();
-            updateExecutionInfo();
-        });
+            updateExecutionInfo(); });
 
         stepTimer->start(delayMs);
     }
@@ -794,8 +803,9 @@ void MainWindow::onStep()
     if (!vm)
         return;
     // qDebug() << pipelinedVm;
-    if(program.errorCount != 0 ){
-        return ;
+    if (program.errorCount != 0)
+    {
+        return;
     }
     vm->Step();
     QCoreApplication::processEvents();
@@ -806,10 +816,12 @@ void MainWindow::onStep()
     refreshMemoryDisplay();
 }
 
-void MainWindow::onUndo(){
+void MainWindow::onUndo()
+{
     // CodeEditor *editor = getCurrentEditor();
-    if(program.errorCount != 0 ){
-        return ;
+    if (program.errorCount != 0)
+    {
+        return;
     }
 
     if (vm)
@@ -829,7 +841,8 @@ void MainWindow::onReset()
         return;
 
     // ✅ Stop any running execution
-    if (executionThread_ && executionThread_->isRunning()) {
+    if (executionThread_ && executionThread_->isRunning())
+    {
         executionThread_->requestStop();
         executionThread_->wait(1000);
         updateTimer_->stop();
@@ -838,7 +851,8 @@ void MainWindow::onReset()
     vm->RequestStop();
     vm->Reset();
 
-    if (program.errorCount == 0) {
+    if (program.errorCount == 0)
+    {
         vm->LoadProgram(program);
     }
 
@@ -848,8 +862,9 @@ void MainWindow::onReset()
     clearLineHighlight();
 
     CodeEditor *editor = getCurrentEditor();
-    if (editor) {
-        editor->clearPipelineLabels();
+    if (editor)
+    {
+        editor->clearAllPipelineLabels();
         editor->setFocus();
     }
 }
@@ -931,74 +946,6 @@ bool MainWindow::promptSaveChanges(int tabIndex)
     return true;
 }
 
-// void MainWindow::updateRegisterTable()
-// {
-//     // qDebug() << "[updateRegisterTable] START";
-//     try
-//     {
-//         if (!registerPanel)
-//         {
-//             // qDebug() << "[updateRegisterTable] ERROR: registerPanel is null!";
-//             return;
-//         }
-
-//         qDebug() << "Backend FPR[0] = " << registerPanel->getRegisterFile()->GetFprValues();
-//         qDebug() << "Frontend FPR[0] = " << registerPanel->getFprTable();
-
-//         RegisterFile *registers = registerPanel->getRegisterFile();
-//         if (!registers)
-//         {
-//             // qDebug() << "[updateRegisterTable] ERROR: registers is null!";
-//             return;
-//         }
-
-//         RegisterTable *reg_table = registerPanel->getRegTable();
-//         RegisterTable *fpr_table = registerPanel->getFprTable();
-//         if (!reg_table)
-//         {
-//             // qDebug() << "[updateRegisterTable] ERROR: reg_table is null!";
-//             return;
-//         }
-
-//         if (!fpr_table)
-//         {
-//             qDebug() << "[updateRegisterTable] ERROR: reg_table is null!";
-//             return;
-//         }
-
-
-//         uint64_t pc_value = vm ? vm->GetProgramCounter() : 0;
-//         // qDebug() << "[updateRegisterTable] PC =" << pc_value;
-
-//         QVector<quint64> reg_values;
-//         QVector<quint64> fpr_values;
-
-//         // First add all 32 GPRs
-//         for (uint64_t v : registers->GetGprValues())
-//             reg_values << static_cast<quint64>(v);
-
-//         qDebug() << "[updateRegisterTable] reg_values.size() =" << reg_values.size();
-//         for (uint64_t v : registers->GetFprValues()){
-//             fpr_values << static_cast<quint64>(v);
-//             // qDebug() << static_cast<quint64>(v);
-//         }
-
-//         // Then add PC at the end
-//         reg_values << static_cast<quint64>(pc_value);
-
-//         // qDebug() << "[updateRegisterTable] reg_table->rowCount() =" << reg_table->rowCount();
-
-//         reg_table->updateAllRegisters(reg_values);
-//         fpr_table->updateAllRegisters(fpr_values);
-//         // qDebug() << "[updateRegisterTable] DONE";
-//     }
-//     catch (const std::exception &e)
-//     {
-//         qDebug() << "[updateRegisterTable] EXCEPTION:" << e.what();
-//     }
-// }
-
-
 void MainWindow::updateRegisterTable()
 {
     try
@@ -1029,18 +976,14 @@ void MainWindow::updateRegisterTable()
         QVector<quint64> reg_values;
         for (uint64_t v : registers->GetGprValues())
             reg_values << static_cast<quint64>(v);
-        reg_values << static_cast<quint64>(pc_value);  // Add PC
+        reg_values << static_cast<quint64>(pc_value); // Add PC
 
         // FLOATING POINT REGISTERS (32 FPRs + PC)
         QVector<quint64> fpr_values;
         for (uint64_t v : registers->GetFprValues())
             fpr_values << static_cast<quint64>(v);
-        fpr_values << static_cast<quint64>(pc_value);  // Add PC for size match
+        fpr_values << static_cast<quint64>(pc_value); // Add PC for size match
 
-        qDebug() << "[updateRegisterTable] GPR values:" << reg_values.size()
-                 << "FPR values:" << fpr_values.size();
-
-        // Update both tables
         reg_table->updateAllRegisters(reg_values);
         fpr_table->updateAllRegisters(fpr_values);
     }
@@ -1102,7 +1045,8 @@ void MainWindow::refreshMemoryDisplay()
 void MainWindow::showProcessorSelection()
 {
     // ✅ Stop execution before switching
-    if (executionThread_ && executionThread_->isRunning()) {
+    if (executionThread_ && executionThread_->isRunning())
+    {
         executionThread_->requestStop();
         executionThread_->wait(2000);
         updateTimer_->stop();
@@ -1122,31 +1066,47 @@ void MainWindow::showProcessorSelection()
 
         // ✅ Disconnect old pipelined signals
         RVSSVMPipelined *oldPipeVm = qobject_cast<RVSSVMPipelined *>(vm);
-        if (oldPipeVm) {
+        if (oldPipeVm)
+        {
             disconnect(oldPipeVm, &RVSSVMPipelined::pipelineStageChanged,
                        this, &MainWindow::onPipelineStageChanged);
         }
 
         // Switch VM
-        if (lastName == "Single-cycle processor") {
+        if (lastName == "Single-cycle processor")
+        {
             vm = singleCycleVm;
-        } else {
+        }
+        else
+        {
             vm = pipelinedVm;
 
             RVSSVMPipelined *pipeVm = qobject_cast<RVSSVMPipelined *>(vm);
-            if (pipeVm) {
+            if (pipeVm)
+            {
                 // Configure pipeline based on selection
-                if (lastName == "5-stage processor w/o forwarding or hazard detection") {
+                if (lastName == "5-stage processor w/o forwarding or hazard detection")
+                {
                     vm->SetPipelineConfig(false, false, false, false);
-                } else if (lastName == "5-stage processor with forwarding and hazard detection") {
+                }
+                else if (lastName == "5-stage processor with forwarding and hazard detection")
+                {
                     vm->SetPipelineConfig(true, true, false, false);
-                } else if (lastName == "5-stage processor w/o hazard detection") {
+                }
+                else if (lastName == "5-stage processor w/o hazard detection")
+                {
                     vm->SetPipelineConfig(false, true, false, false);
-                } else if (lastName == "5-stage processor w/o forwarding unit") {
+                }
+                else if (lastName == "5-stage processor w/o forwarding unit")
+                {
                     vm->SetPipelineConfig(true, false, false, false);
-                } else if (lastName == "5-stage processor with static Branch prediction") {
+                }
+                else if (lastName == "5-stage processor with static Branch prediction")
+                {
                     vm->SetPipelineConfig(true, true, true, false);
-                } else if (lastName == "5-stage processor with dynamic 1-bit Branch prediction") {
+                }
+                else if (lastName == "5-stage processor with dynamic 1-bit Branch prediction")
+                {
                     vm->SetPipelineConfig(true, true, false, true);
                 }
 
@@ -1161,7 +1121,8 @@ void MainWindow::showProcessorSelection()
 
         // Reset and update displays
         vm->Reset();
-        if (program.errorCount == 0) {
+        if (program.errorCount == 0)
+        {
             vm->LoadProgram(program);
         }
 
@@ -1172,77 +1133,55 @@ void MainWindow::showProcessorSelection()
         clearLineHighlight();
 
         CodeEditor *editor = getCurrentEditor();
-        if (editor) {
-            editor->clearPipelineLabels();
+        if (editor)
+        {
+            editor->clearAllPipelineLabels();
         }
     }
 }
 
 void MainWindow::onPipelineStageChanged(uint64_t pc, QString stage)
 {
-    // CodeEditor *editor = getCurrentEditor();
-    // if (!editor)
-    //     return;
-
-    // // Convert PC to instruction index.
-    // unsigned int instrIndex = static_cast<unsigned int>(pc / 4);
-    // auto it = program.instruction_number_line_number_mapping.find(instrIndex);
-
-    // if (it == program.instruction_number_line_number_mapping.end())
-    //     return;
-
-    // unsigned int sourceLine = it->second; // 1-based
-
-    // // CLEAR stage: remove label at correct line and for specific stage.
-    // if (stage.endsWith("_CLEAR")) {
-    //     // qDebug()  << " entered CLear and sourceLine: " << sourceLine;
-    //     QString baseStage = stage.left(stage.indexOf("_CLEAR"));
-    //     editor->setPipelineLabel(sourceLine, baseStage + "_CLEAR");
-    //     return;
-    // }
-
-    // // Set or update label for this line
-    // editor->setPipelineLabel(sourceLine, stage);
-    // // qDebug() << "Pipeline label set at line" << sourceLine << ":" << stage;
-
     CodeEditor *editor = getCurrentEditor();
     if (!editor)
         return;
 
-    if (stage.endsWith("_CLEAR")) {
-        QString baseStage = stage.left(stage.indexOf("_CLEAR"));
-
-        // ✅ Option 1: If PC is valid (non-zero), use it
-        if (pc != 0) {
-            unsigned int instrIndex = static_cast<unsigned int>(pc / 4);
-            auto it = program.instruction_number_line_number_mapping.find(instrIndex);
-            if (it != program.instruction_number_line_number_mapping.end()) {
-                unsigned int sourceLine = it->second;
-                editor->setPipelineLabel(sourceLine, stage);
-                return;
-            }
-        }
-
-        // ✅ Option 2: PC is 0 or invalid - clear all instances of this stage
-        QMap<int, QString> labels = editor->getPipelineLabels();
-        for (auto it = labels.begin(); it != labels.end(); ++it) {
-            if (it.value() == baseStage) {
-                editor->setPipelineLabel(it.key(), stage);
-            }
-        }
-        return;
-    }
-
-    // Normal stage setting
+    // Convert PC to line number
     unsigned int instrIndex = static_cast<unsigned int>(pc / 4);
     auto it = program.instruction_number_line_number_mapping.find(instrIndex);
     if (it == program.instruction_number_line_number_mapping.end())
-        return;
+    {
+        // qDebug() << "No mapping found for PC" << pc;
+        if (stage.endsWith("_CLEAR"))
+        {
+            QString baseStage = stage.left(stage.indexOf("_CLEAR"));
+            QMap<int, QSet<QString>> labels = editor->getPipelineLabels();
 
-    unsigned int sourceLine = it->second;
-    editor->setPipelineLabel(sourceLine, stage);
+            for (auto lineIt = labels.begin(); lineIt != labels.end(); ++lineIt)
+            {
+                if (lineIt.value().contains(baseStage))
+                {
+                    editor->clearPipelineLabels(lineIt.key(), baseStage);
+                }
+            }
+            return;
+        }
+    }
+    unsigned int sourceLine = it->second; // 1-based
+
+    // Handle CLEAR or SET
+    if (stage.endsWith("_CLEAR"))
+    {
+        QString baseStage = stage.left(stage.indexOf("_CLEAR"));
+        editor->clearPipelineLabels(sourceLine, baseStage);
+        // qDebug() << "Cleared" << baseStage << "from line" << sourceLine;
+    }
+    else
+    {
+        editor->setPipelineLabel(sourceLine, stage);
+        // qDebug() << "Set" << stage << "at line" << sourceLine;
+    }
 }
-
 
 void MainWindow::onExecutionFinished(uint64_t instructions, uint64_t cycles)
 {
@@ -1285,9 +1224,11 @@ void MainWindow::onPeriodicUpdate()
 
     // ✅ For pipelined mode, also update pipeline labels
     CodeEditor *editor = getCurrentEditor();
-    if (editor) {
+    if (editor)
+    {
         RVSSVMPipelined *pipeVm = qobject_cast<RVSSVMPipelined *>(vm);
-        if (pipeVm) {
+        if (pipeVm)
+        {
             // Pipeline labels are updated via signals, but we can force a repaint
             editor->viewport()->update();
         }
@@ -1296,14 +1237,16 @@ void MainWindow::onPeriodicUpdate()
 
 void MainWindow::onStop()
 {
-    if (executionThread_ && executionThread_->isRunning()) {
+    if (executionThread_ && executionThread_->isRunning())
+    {
         executionThread_->requestStop();
         executionThread_->wait(1000); // Wait up to 1 second
     }
 
     updateTimer_->stop();
 
-    if (vm) {
+    if (vm)
+    {
         vm->RequestStop();
         vm->Reset();
         updateRegisterTable();
@@ -1316,11 +1259,13 @@ void MainWindow::onStop()
 
 void MainWindow::onPause()
 {
-    if (executionThread_ && executionThread_->isRunning()) {
+    if (executionThread_ && executionThread_->isRunning())
+    {
         executionThread_->requestStop();
     }
 
-    if (vm) {
+    if (vm)
+    {
         vm->RequestStop();
     }
 
@@ -1330,9 +1275,11 @@ void MainWindow::onPause()
 
 MainWindow::~MainWindow()
 {
-    if (executionThread_) {
+    if (executionThread_)
+    {
         executionThread_->requestStop();
-        if (!executionThread_->wait(2000)) {
+        if (!executionThread_->wait(2000))
+        {
             executionThread_->terminate();
             executionThread_->wait();
         }

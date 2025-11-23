@@ -27,6 +27,9 @@ add_library(frontend STATIC ${FRONTEND_SOURCES}
     VMExecutionThread.h
     VMExecutionThread.h
     VMExecutionThread.cpp
+    InstructionInfo.h
+    InstructionInfo.cpp
+    autocompletewidget.h autocompletewidget.cpp
 )
 
 # Link Qt Widgets and backend
