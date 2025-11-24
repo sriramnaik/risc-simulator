@@ -5,14 +5,14 @@ set(BACKEND_SOURCES
     config.h
     globals.cpp
     globals.h
-    mainloop.cpp
-    mainloop.h
+
+
     utils.cpp
     utils.h
     vm_asm_mw.cpp
     vm_asm_mw.h
-    vm_runner.cpp
-    vm_runner.h
+
+
 
     # Assembler sources
     assembler/assembler.cpp
