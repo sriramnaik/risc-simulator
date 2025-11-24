@@ -22,6 +22,7 @@ private:
         bool valid = false;
         uint64_t pc = 0;
         uint32_t instruction = 0;
+        bool predicted_taken = false;
     } if_id_, if_id_next_;
 
     struct ID_EX {
@@ -40,6 +41,7 @@ private:
         bool mem_to_reg = false, alu_src = false, branch = false, is_float = false;
 
         // bool is_float = false;  // Add this
+        bool predicted_taken = false;
         uint64_t reg3_value = 0;
 
     } id_ex_, id_ex_next_;

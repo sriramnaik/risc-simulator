@@ -81,6 +81,12 @@ private:
     QString lastISA = "RV64";
     QLabel *processorInfoLabel;
 
+    void startAnimatedExecution(int speed);
+    QAction *runAction;
+    QAction *resumeAction;
+    bool isPaused_;
+    bool wasStoppedByUser_;
+
 private slots:
     void onNewFile();
     void onOpenFile();
@@ -91,6 +97,7 @@ private slots:
     void onTabChanged(int index);
     void onTabCloseRequested(int index);
     void onStep();
+    void onResume();
     void onPause();
     void onStop();
     void onUndo();

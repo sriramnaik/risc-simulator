@@ -43,8 +43,8 @@ MainWindow::MainWindow(QWidget *parent)
       executionSpeedSlider(nullptr),
       currentTabIndex(-1),
       lastName("Single-cycle processor"),
-      lastISA("RV64")
-
+      lastISA("RV64"),
+    wasStoppedByUser_(false)
 {
     // qDebug() << "[MainWindow] Constructor START";
 
@@ -78,12 +78,15 @@ MainWindow::MainWindow(QWidget *parent)
     QAction *saveFileAction = new QAction(QIcon("icons/SaveFile.png"), "Save File", this);
     QAction *saveAsFileAction = new QAction(QIcon("icons/SaveAs.png"), "Save As", this);
     QAction *assembleAction = new QAction(QIcon("icons/processo.png"), "Assemble", this);
-    QAction *runAction = new QAction(QIcon("icons/run.png"), "Run", this);
-    QAction *stepAction = new QAction(QIcon("icons/step.png"), "Step", this);
+    runAction = new QAction(QIcon("icons/run.png"), "Run", this);
+    resumeAction = new QAction(QIcon("icons/resume.png"), "Resume", this);  // You can use same icon or different
+    QAction *stepAction = new QAction(QIcon("icons/steps.png"), "Step", this);
     QAction *undoAction = new QAction(QIcon("icons/undo.png"), "Undo", this);
     QAction *resetAction = new QAction(QIcon("icons/reset.png"), "reset", this);
     QAction *pauseAction = new QAction(QIcon("icons/pause.png"), "Pause", this);
     QAction *stopAction = new QAction(QIcon("icons/stop.png"), "Stop", this);
+
+    resumeAction->setEnabled(false);
 
     toolBar->addAction(processor);
     toolBar->addAction(newFileAction);
@@ -94,6 +97,7 @@ MainWindow::MainWindow(QWidget *parent)
     toolBar->addAction(runAction);
     toolBar->addSeparator();
     toolBar->addAction(stepAction);
+    toolBar->addAction(resumeAction);
     toolBar->addAction(pauseAction);
     toolBar->addAction(stopAction);
     toolBar->addAction(undoAction);
@@ -322,6 +326,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(vm, &RVSSVM::memoryUpdated, bottomPanel->getDataSegment(),
             &DataSegment::updateMemory);
 
+    isPaused_ = false;
+
     // --- Connect toolbar actions ---
     // qDebug() << "[MainWindow] Connecting toolbar actions";
     connect(newFileAction, &QAction::triggered, this, &MainWindow::onNewFile);
@@ -331,6 +337,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(assembleAction, &QAction::triggered, this, &MainWindow::onAssemble);
     connect(runAction, &QAction::triggered, this, &MainWindow::onRun);
     connect(stepAction, &QAction::triggered, this, &MainWindow::onStep);
+    connect(resumeAction, &QAction::triggered, this, &MainWindow::onResume);
     connect(pauseAction, &QAction::triggered, this, &MainWindow::onPause);
     connect(stopAction, &QAction::triggered, this, &MainWindow::onStop);
     connect(undoAction, &QAction::triggered, this, &MainWindow::onUndo);
@@ -355,6 +362,19 @@ MainWindow::MainWindow(QWidget *parent)
                        });
 
     // qDebug() << "[MainWindow] Constructor COMPLETE";
+}
+
+MainWindow::~MainWindow()
+{
+    if (executionThread_)
+    {
+        executionThread_->requestStop();
+        if (!executionThread_->wait(2000))
+        {
+            executionThread_->terminate();
+            executionThread_->wait();
+        }
+    }
 }
 
 CodeEditor *MainWindow::getCurrentEditor()
@@ -593,7 +613,10 @@ void MainWindow::onAssemble()
 
     if (!editor)
     {
-        QMessageBox::warning(this, "Warning", "No file is open!");
+        if (errorconsole) {
+            errorconsole->addMessages({"Error: No file is open!"});
+        }
+        statusBar()->showMessage("Error: No file is open", 3000);
         return;
     }
 
@@ -605,10 +628,25 @@ void MainWindow::onAssemble()
         updateTimer_->stop();
     }
 
+    isPaused_ = false;
+    resumeAction->setEnabled(false);
+
+    QList<QTimer*> timers = this->findChildren<QTimer*>();
+    for (QTimer* timer : timers)
+    {
+        if (timer->isActive() && timer != updateTimer_)
+        {
+            timer->stop();
+        }
+    }
+
     QString filePath = getCurrentFilePath();
     if (filePath.isEmpty())
     {
-        QMessageBox::warning(this, "No File Open", "Please save the file before assembling.");
+        if (errorconsole) {
+            errorconsole->addMessages({"Error: No file path. Please save the file before assembling."});
+        }
+        statusBar()->showMessage("Error: Please save the file before assembling", 3000);
         return;
     }
 
@@ -616,9 +654,12 @@ void MainWindow::onAssemble()
         fileTabs[currentTabIndex].isModified)
     {
         bool saved = saveToFile(currentTabIndex, filePath);
-        if (!saved)
+        if (!saved){
+            if (errorconsole) {
+                errorconsole->addMessages({"Error: Could not save file before assembling."});
+            }
             return;
-    }
+        }}
 
     if (registerPanel)
     {
@@ -627,7 +668,10 @@ void MainWindow::onAssemble()
 
     if (!assembler)
     {
-        QMessageBox::critical(this, "Error", "Assembler not initialized!");
+        if (errorconsole) {
+            errorconsole->addMessages({"Error: Assembler not initialized!"});
+        }
+        statusBar()->showMessage("Error: Assembler not initialized", 3000);
         return;
     }
 
@@ -682,124 +726,94 @@ void MainWindow::onAssemble()
     }
 }
 
-// void MainWindow::onRun()
-// {
-//     CodeEditor *editor = getCurrentEditor();
-//     if (!editor)
-//     {
-//         QMessageBox::warning(this, "Warning", "No file is open!");
-//         return;
-//     }
+void MainWindow::onRun()
+{
+    CodeEditor *editor = getCurrentEditor();
+    if (!editor)
+    {
+        if (errorconsole) {
+            errorconsole->addMessages({"Error: No file is open!"});
+        }
+        statusBar()->showMessage("Error: No file is open", 3000);
+        return;
+    }
 
-//     if (!vm)
-//     {
-//         QMessageBox::critical(this, "Error", "VM not initialized!");
-//         return;
-//     }
+    if (!vm)
+    {
+        if (errorconsole) {
+            errorconsole->addMessages({"Error: VM not initialized!"});
+        }
+        statusBar()->showMessage("Error: VM not initialized", 3000);
+        return;
+    }
 
-//     if (program.errorCount != 0)
-//     {
-//         QMessageBox::warning(this, "Assembly Error",
-//                              "Please fix assembly errors before running.");
-//         return;
-//     }
+    if (program.errorCount != 0)
+    {
+        if (errorconsole) {
+            errorconsole->addMessages({"Error: Please fix assembly errors before running."});
+        }
+        bottomPanel->changeTab();  // Switch to error console
+        statusBar()->showMessage("Cannot run: Assembly errors present", 3000);
+        return;
+    }
 
-//     if (executionThread_ && executionThread_->isRunning())
-//     {
-//         QMessageBox::information(this, "Info", "Execution already in progress!");
-//         return;
-//     }
+    if (executionThread_ && executionThread_->isRunning())
+    {
+        if (errorconsole) {
+            errorconsole->addMessages({"Info: Execution already in progress!"});
+        }
+        statusBar()->showMessage("Execution already in progress", 3000);
+        return;
+    }
 
-//     onReset();
-//     vm->stop_requested_ = false;
+    // ✅ Always reset for Run
+    onReset();
+    vm->stop_requested_ = false;
+    isPaused_ = false;  // ✅ Clear pause state
+    wasStoppedByUser_ = false;
+    // ✅ Hide resume button when starting fresh
+    resumeAction->setEnabled(false);
 
-//     int speed = executionSpeedSlider->value();
+    int speed = executionSpeedSlider->value();
 
-//     // ✅ DEBUG: Check VM type and initial state
-//     RVSSVMPipelined *pipeVm = qobject_cast<RVSSVMPipelined *>(vm);
-//     // qDebug() << "========= EXECUTION START =========";
-//     // qDebug() << "VM Type:" << (pipeVm ? "PIPELINED" : "SINGLE-CYCLE");
-//     // qDebug() << "Program Size:" << vm->GetProgramSize();
-//     // qDebug() << "Initial PC:" << vm->GetProgramCounter();
-//     // qDebug() << "Pipeline Empty:" << vm->IsPipelineEmpty();
-//     // qDebug() << "===================================";
+    RVSSVMPipelined *pipeVm = qobject_cast<RVSSVMPipelined *>(vm);
+    qDebug() << "========= EXECUTION START =========";
+    qDebug() << "VM Type:" << (pipeVm ? "PIPELINED" : "SINGLE-CYCLE");
+    qDebug() << "Program Size:" << vm->GetProgramSize();
+    qDebug() << "Initial PC:" << vm->GetProgramCounter();
+    qDebug() << "Pipeline Empty:" << vm->IsPipelineEmpty();
+    qDebug() << "===================================";
 
-//     if (speed > 30)
-//     {
-//         // === FAST MODE: Run in background thread ===
-//         executionThread_->setVM(vm);
-//         executionThread_->setMaxInstructions(10000);
+    if (errorconsole) {
+        errorconsole->addMessages({"Execution started..."});
+    }
 
-//         editor->clearAllPipelineLabels();
-//         clearLineHighlight();
-//         updateExecutionInfo();
+    if (speed > 30)
+    {
+        // === FAST MODE ===
+        executionThread_->setVM(vm);
+        executionThread_->setMaxInstructions(1000000);
 
-//         executionThread_->start();
-//         updateTimer_->start(100);
+        editor->clearAllPipelineLabels();
+        clearLineHighlight();
+        updateExecutionInfo();
 
-//         statusBar()->showMessage("Running in background...", 0);
-//     }
-//     else
-//     {
-//         // === ANIMATED MODE: Step-by-step with timer ===
-//         editor->clearAllPipelineLabels();
-//         clearLineHighlight();
-//         updateExecutionInfo();
+        executionThread_->start();
+        updateTimer_->start(100);
 
-//         int delayMs = 1000 / speed;
-//         QTimer *stepTimer = new QTimer(this);
+        statusBar()->showMessage("Running in background...", 0);
+    }
+    else
+    {
+        // === ANIMATED MODE ===
+        editor->clearAllPipelineLabels();
+        clearLineHighlight();
+        updateExecutionInfo();
 
-//         // ✅ DEBUG counter
-//         int stepCount = 0;
-
-//         connect(stepTimer, &QTimer::timeout, this, [this, stepTimer, &stepCount, pipeVm]()
-//                 {
-//             stepCount++;
-
-//             uint64_t pc = vm->GetProgramCounter();
-//             uint64_t progSize = vm->GetProgramSize();
-//             bool pipeEmpty = vm->IsPipelineEmpty();
-//             bool stopReq = vm->IsStopRequested();
-
-//             // ✅ DEBUG: Print every 10 steps or near end
-//             // if (stepCount % 10 == 0 || pc >= progSize) {
-//                 // qDebug() << "Step" << stepCount
-//                 //          << "| PC:" << pc
-//                 //          << "/ Size:" << progSize
-//                 //          << "| Pipeline Empty:" << pipeEmpty
-//                 //          << "| Stop Req:" << stopReq
-//                 //          << "| Instr Retired:" << vm->instructions_retired_;
-//             // }
-
-//             if ((pc >= progSize && pipeEmpty) || stopReq) {
-//                 // qDebug() << "========= EXECUTION END =========";
-//                 // qDebug() << "Reason:" << (stopReq ? "STOP REQUESTED" : "PROGRAM END");
-//                 // qDebug() << "Final PC:" << pc;
-//                 // qDebug() << "Pipeline Empty:" << pipeEmpty;
-//                 // qDebug() << "Total Steps:" << stepCount;
-//                 // qDebug() << "=================================";
-
-//                 stepTimer->stop();
-//                 stepTimer->deleteLater();
-
-//                 updateExecutionInfo();
-//                 refreshMemoryDisplay();
-
-//                 QString msg = QString("Execution finished!\nInstructions: %1\nCycles: %2")
-//                                   .arg(vm->instructions_retired_)
-//                                   .arg(vm->cycle_s_);
-//                 QMessageBox::information(this, "Complete", msg);
-//                 return;
-//             }
-
-//             vm->Step();
-//             updateRegisterTable();
-//             highlightCurrentLine();
-//             updateExecutionInfo(); });
-
-//         stepTimer->start(delayMs);
-//     }
-// }
+        startAnimatedExecution(speed);
+        statusBar()->showMessage("Running step-by-step...", 0);
+    }
+}
 
 void MainWindow::onStep()
 {
@@ -873,6 +887,201 @@ void MainWindow::onReset()
     }
 }
 
+void MainWindow::onStop()
+{
+    QList<QTimer*> timers = this->findChildren<QTimer*>();
+    for (QTimer* timer : timers)
+    {
+        if (timer->isActive())
+        {
+            timer->stop();
+        }
+    }
+
+    if (executionThread_ && executionThread_->isRunning())
+    {
+        executionThread_->requestStop();
+        executionThread_->wait(1000);
+    }
+
+    updateTimer_->stop();
+    wasStoppedByUser_ = true;
+
+    if (vm)
+    {
+        // ✅ Save stats before reset
+        uint64_t instructions = vm->instructions_retired_;
+        uint64_t cycles = vm->cycle_s_;
+
+        vm->RequestStop();
+        vm->Reset();
+        updateRegisterTable();
+        clearLineHighlight();
+        updateExecutionInfo();
+
+        // ✅ Log to console instead of popup
+        if (instructions > 0 || cycles > 0)
+        {
+            double cpi = instructions > 0 ? (double)cycles / instructions : 0.0;
+
+            if (errorconsole) {
+                errorconsole->addMessages({
+                    "==========================================",
+                    "Execution stopped by user",
+                    QString("Instructions executed: %1").arg(instructions).toStdString(),
+                    QString("Cycles: %1").arg(cycles).toStdString(),
+                    QString("CPI: %1").arg(cpi, 0, 'f', 2).toStdString(),
+                    "=========================================="
+                });
+            }
+
+            statusBar()->showMessage(
+                QString("Stopped - Instructions: %1, Cycles: %2, CPI: %3")
+                    .arg(instructions)
+                    .arg(cycles)
+                    .arg(cpi, 0, 'f', 2),
+                5000
+                );
+        }
+        else
+        {
+            if (errorconsole) {
+                errorconsole->addMessages({"Execution stopped (no instructions executed)"});
+            }
+            statusBar()->showMessage("Execution stopped", 3000);
+        }
+    }
+
+    // ✅ Clear pause state and disable resume
+    isPaused_ = false;
+    resumeAction->setEnabled(false);
+
+}
+
+
+void MainWindow::onResume()
+{
+    CodeEditor *editor = getCurrentEditor();
+    if (!editor)
+    {
+        if (errorconsole) {
+            errorconsole->addMessages({"Error: No file is open!"});
+        }
+        statusBar()->showMessage("Error: No file is open", 3000);
+        return;
+    }
+
+    if (!vm)
+    {
+        if (errorconsole) {
+            errorconsole->addMessages({"Error: VM not initialized!"});
+        }
+        statusBar()->showMessage("Error: VM not initialized", 3000);
+        return;
+    }
+
+    if (!isPaused_)
+    {
+        if (errorconsole) {
+            errorconsole->addMessages({"Info: Execution is not paused - use Run instead"});
+        }
+        statusBar()->showMessage("Execution is not paused", 3000);
+        return;
+    }
+
+    if (executionThread_ && executionThread_->isRunning())
+    {
+        if (errorconsole) {
+            errorconsole->addMessages({"Info: Execution already in progress!"});
+        }
+        statusBar()->showMessage("Execution already in progress", 3000);
+        return;
+    }
+
+    // ✅ Clear stop flag and pause state
+    vm->stop_requested_ = false;
+    vm->ClearStop();
+    isPaused_ = false;
+    wasStoppedByUser_ = false;
+
+    // ✅ Hide resume button during execution
+    resumeAction->setEnabled(false);
+
+    int speed = executionSpeedSlider->value();
+
+    RVSSVMPipelined *pipeVm = qobject_cast<RVSSVMPipelined *>(vm);
+    qDebug() << "========= EXECUTION RESUME =========";
+    qDebug() << "VM Type:" << (pipeVm ? "PIPELINED" : "SINGLE-CYCLE");
+    qDebug() << "Current PC:" << vm->GetProgramCounter();
+    qDebug() << "Instructions Retired:" << vm->instructions_retired_;
+    qDebug() << "Cycles:" << vm->cycle_s_;
+    qDebug() << "====================================";
+
+
+    if (errorconsole) {
+        errorconsole->addMessages({
+            QString("Resuming execution from PC: 0x%1")
+            .arg(vm->GetProgramCounter(), 0, 16)
+                .toStdString()
+        });
+    }
+
+    if (speed > 30)
+    {
+        // === FAST MODE ===
+        executionThread_->setVM(vm);
+        executionThread_->setMaxInstructions(1000000);
+
+        executionThread_->start();
+        updateTimer_->start(100);
+
+        statusBar()->showMessage("Resuming execution...", 0);
+    }
+    else
+    {
+        // === ANIMATED MODE ===
+        startAnimatedExecution(speed);
+        statusBar()->showMessage("Resuming step-by-step execution...", 3000);
+    }
+}
+
+void MainWindow::onPause()
+{
+    // Stop the execution thread
+    if (executionThread_ && executionThread_->isRunning())
+    {
+        executionThread_->requestStop();
+        executionThread_->wait(1000);
+    }
+
+    // Stop the GUI update timer
+    updateTimer_->stop();
+    vm->RequestStop();
+
+    wasStoppedByUser_ = true;
+    // ✅ Set pause state
+    isPaused_ = true;
+
+    // ✅ Show resume button
+    resumeAction->setEnabled(true);
+
+    // Update UI to show current state
+    updateRegisterTable();
+    highlightCurrentLine();
+    updateExecutionInfo();
+    refreshMemoryDisplay();
+
+    if (errorconsole) {
+        errorconsole->addMessages({
+            QString("Execution PAUSED at PC: 0x%1")
+            .arg(vm->GetProgramCounter(), 0, 16)
+                .toStdString()
+        });
+    }
+
+    statusBar()->showMessage("Execution paused - press Resume to continue", 3000);
+}
+
 void MainWindow::highlightCurrentLine()
 {
     CodeEditor *editor = getCurrentEditor();
@@ -892,14 +1101,6 @@ void MainWindow::highlightCurrentLine()
     cursor.movePosition(QTextCursor::Down, QTextCursor::MoveAnchor, sourceLine - 1);
     cursor.select(QTextCursor::LineUnderCursor);
     editor->highlightLine(sourceLine);
-    // QTextEdit::ExtraSelection highlight;
-    // highlight.cursor = cursor;
-    // highlight.format.setBackground(QColor(100, 150, 255, 100));
-    // highlight.format.setProperty(QTextFormat::FullWidthSelection, true);
-
-    // QList<QTextEdit::ExtraSelection> extras;
-    // extras << highlight;
-    // editor->setExtraSelections(extras);
 }
 
 void MainWindow::clearLineHighlight()
@@ -1197,284 +1398,6 @@ void MainWindow::onPipelineStageChanged(uint64_t pc, QString stage)
     }
 }
 
-// void MainWindow::onExecutionFinished(uint64_t instructions, uint64_t cycles)
-// {
-//     updateTimer_->stop();
-
-//     // Final UI update
-//     updateRegisterTable();
-//     highlightCurrentLine();
-//     updateExecutionInfo();
-//     refreshMemoryDisplay();
-
-//     statusBar()->showMessage("Execution complete", 3000);
-
-//     QString msg = QString("Execution finished!\nInstructions: %1\nCycles: %2")
-//                       .arg(instructions)
-//                       .arg(cycles);
-//     QMessageBox::information(this, "Complete", msg);
-// }
-
-// void MainWindow::onExecutionError(QString message)
-// {
-//     updateTimer_->stop();
-
-//     // Update UI with final state
-//     updateRegisterTable();
-//     highlightCurrentLine();
-//     updateExecutionInfo();
-//     refreshMemoryDisplay();
-
-//     statusBar()->showMessage("Execution stopped", 3000);
-//     QMessageBox::critical(this, "Execution Error", message);
-// }
-
-// void MainWindow::onPeriodicUpdate()
-// {
-//     // Update GUI periodically during execution
-//     updateRegisterTable();
-//     highlightCurrentLine();
-//     updateExecutionInfo();
-
-//     // ✅ For pipelined mode, also update pipeline labels
-//     CodeEditor *editor = getCurrentEditor();
-//     if (editor)
-//     {
-//         RVSSVMPipelined *pipeVm = qobject_cast<RVSSVMPipelined *>(vm);
-//         if (pipeVm)
-//         {
-//             // Pipeline labels are updated via signals, but we can force a repaint
-//             editor->viewport()->update();
-//         }
-//     }
-// }
-
-void MainWindow::onStop()
-{
-    if (executionThread_ && executionThread_->isRunning())
-    {
-        executionThread_->requestStop();
-        executionThread_->wait(1000); // Wait up to 1 second
-    }
-
-    updateTimer_->stop();
-
-    if (vm)
-    {
-        vm->RequestStop();
-        vm->Reset();
-        updateRegisterTable();
-        clearLineHighlight();
-        updateExecutionInfo();
-    }
-
-    statusBar()->showMessage("Execution stopped", 2000);
-}
-
-void MainWindow::onPause()
-{
-    if (executionThread_ && executionThread_->isRunning())
-    {
-        executionThread_->requestStop();
-    }
-
-    if (vm)
-    {
-        vm->RequestStop();
-    }
-
-    updateTimer_->stop();
-    statusBar()->showMessage("Execution paused", 2000);
-}
-
-MainWindow::~MainWindow()
-{
-    if (executionThread_)
-    {
-        executionThread_->requestStop();
-        if (!executionThread_->wait(2000))
-        {
-            executionThread_->terminate();
-            executionThread_->wait();
-        }
-    }
-}
-
-void MainWindow::onRun()
-{
-    CodeEditor *editor = getCurrentEditor();
-    if (!editor)
-    {
-        QMessageBox::warning(this, "Warning", "No file is open!");
-        return;
-    }
-
-    if (!vm)
-    {
-        QMessageBox::critical(this, "Error", "VM not initialized!");
-        return;
-    }
-
-    if (program.errorCount != 0)
-    {
-        QMessageBox::warning(this, "Assembly Error",
-                             "Please fix assembly errors before running.");
-        return;
-    }
-
-    if (executionThread_ && executionThread_->isRunning())
-    {
-        QMessageBox::information(this, "Info", "Execution already in progress!");
-        return;
-    }
-
-    onReset();
-    vm->stop_requested_ = false;
-
-    int speed = executionSpeedSlider->value();
-
-    // ✅ DEBUG: Check VM type and initial state
-    RVSSVMPipelined *pipeVm = qobject_cast<RVSSVMPipelined *>(vm);
-    qDebug() << "========= EXECUTION START =========";
-    qDebug() << "VM Type:" << (pipeVm ? "PIPELINED" : "SINGLE-CYCLE");
-    qDebug() << "Program Size:" << vm->GetProgramSize();
-    qDebug() << "Initial PC:" << vm->GetProgramCounter();
-    qDebug() << "Pipeline Empty:" << vm->IsPipelineEmpty();
-    qDebug() << "===================================";
-
-    if (speed > 30)
-    {
-        // === FAST MODE: Run in background thread ===
-        executionThread_->setVM(vm);
-        executionThread_->setMaxInstructions(1000000); // ✅ Increased from 10000
-
-        editor->clearAllPipelineLabels();
-        clearLineHighlight();
-        updateExecutionInfo();
-
-        executionThread_->start();
-        updateTimer_->start(100);
-
-        statusBar()->showMessage("Running in background...", 0);
-    }
-    else
-    {
-        // === ANIMATED MODE: Step-by-step with timer ===
-        editor->clearAllPipelineLabels();
-        clearLineHighlight();
-        updateExecutionInfo();
-
-        int delayMs = 1000 / speed;
-        QTimer *stepTimer = new QTimer(this);
-
-        // ✅ Step counter and safety limit
-        int *stepCount = new int(0);
-        const int MAX_STEPS = 100000; // Safety limit
-
-        connect(stepTimer, &QTimer::timeout, this, [this, stepTimer, stepCount, pipeVm, MAX_STEPS]()
-                {
-                    (*stepCount)++;
-
-                    // ✅ CRITICAL: Emergency stop after too many steps
-                    if (*stepCount > MAX_STEPS)
-                    {
-                        qDebug() << "\n========== EMERGENCY STOP ==========";
-                        qDebug() << "Exceeded" << MAX_STEPS << "steps - stopping execution";
-                        qDebug() << "Final PC:" << vm->GetProgramCounter();
-                        qDebug() << "Instructions Retired:" << vm->instructions_retired_;
-
-                        stepTimer->stop();
-                        stepTimer->deleteLater();
-                        delete stepCount;
-
-                        updateExecutionInfo();
-                        refreshMemoryDisplay();
-
-                        QMessageBox::warning(this, "Execution Stopped",
-                                             QString("Execution stopped after %1 steps to prevent infinite loop.\n\n"
-                                                     "Instructions executed: %2\n"
-                                                     "Cycles: %3")
-                                                 .arg(MAX_STEPS)
-                                                 .arg(vm->instructions_retired_)
-                                                 .arg(vm->cycle_s_));
-                        return;
-                    }
-
-                    uint64_t pc = vm->GetProgramCounter();
-                    uint64_t progSize = vm->GetProgramSize();
-                    bool pipeEmpty = vm->IsPipelineEmpty();
-                    bool stopReq = vm->IsStopRequested();
-
-                    // ✅ DEBUG: Print every 100 steps or near end
-                    if (*stepCount % 100 == 0 || pc >= progSize)
-                    {
-                        qDebug() << "[Step" << *stepCount << "]"
-                                 << "PC:" << QString::number(pc, 16)
-                                 << "/ Size:" << QString::number(progSize, 16)
-                                 << "| Pipeline Empty:" << pipeEmpty
-                                 << "| Stop Req:" << stopReq
-                                 << "| Instr:" << vm->instructions_retired_;
-                    }
-
-                    // ✅ CRITICAL FIX: Better termination check
-                    // For pipelined: PC >= size AND pipeline empty
-                    // For single-cycle: PC >= size OR stop requested
-                    bool shouldStop = false;
-                    if (pipeVm)
-                    {
-                        // Pipelined VM: must drain pipeline
-                        shouldStop = (pc >= progSize && pipeEmpty) || stopReq;
-                    }
-                    else
-                    {
-                        // Single-cycle VM: immediate stop
-                        shouldStop = (pc >= progSize) || stopReq;
-                    }
-
-                    if (shouldStop)
-                    {
-                        qDebug() << "\n========= EXECUTION END =========";
-                        qDebug() << "Reason:" << (stopReq ? "STOP REQUESTED" : "PROGRAM END");
-                        qDebug() << "Final PC:" << pc;
-                        qDebug() << "Pipeline Empty:" << pipeEmpty;
-                        qDebug() << "Total Steps:" << *stepCount;
-                        qDebug() << "Instructions:" << vm->instructions_retired_;
-                        qDebug() << "Cycles:" << vm->cycle_s_;
-                        qDebug() << "=================================";
-
-                        stepTimer->stop();
-                        stepTimer->deleteLater();
-                        delete stepCount;
-
-                        updateExecutionInfo();
-                        refreshMemoryDisplay();
-
-                        QString msg = QString("Execution finished!\n\n"
-                                              "Instructions: %1\n"
-                                              "Cycles: %2\n"
-                                              "CPI: %3")
-                                          .arg(vm->instructions_retired_)
-                                          .arg(vm->cycle_s_)
-                                          .arg(vm->instructions_retired_ > 0
-                                                   ? QString::number((double)vm->cycle_s_ / vm->instructions_retired_, 'f', 2)
-                                                   : "N/A");
-                        QMessageBox::information(this, "Complete", msg);
-                        return;
-                    }
-
-                    // Execute one step
-                    vm->Step();
-
-                    // Update UI
-                    updateRegisterTable();
-                    highlightCurrentLine();
-                    updateExecutionInfo();
-                });
-
-        stepTimer->start(delayMs);
-    }
-}
-
 void MainWindow::onExecutionFinished(uint64_t instructions, uint64_t cycles)
 {
     updateTimer_->stop();
@@ -1490,17 +1413,36 @@ void MainWindow::onExecutionFinished(uint64_t instructions, uint64_t cycles)
     updateExecutionInfo();
     refreshMemoryDisplay();
 
-    statusBar()->showMessage("Execution complete", 3000);
 
     double cpi = instructions > 0 ? (double)cycles / instructions : 0.0;
-    QString msg = QString("Execution finished!\n\n"
-                          "Instructions: %1\n"
-                          "Cycles: %2\n"
-                          "CPI: %3")
-                      .arg(instructions)
-                      .arg(cycles)
-                      .arg(cpi, 0, 'f', 2);
-    QMessageBox::information(this, "Complete", msg);
+    if (errorconsole) {
+        errorconsole->addMessages({
+            "==========================================",
+            "Execution completed successfully!",
+            QString("Instructions: %1").arg(instructions).toStdString(),
+            QString("Cycles: %1").arg(cycles).toStdString(),
+            QString("CPI: %1").arg(cpi, 0, 'f', 2).toStdString(),
+            "=========================================="
+        });
+    }
+
+    statusBar()->showMessage(
+        QString("Complete - Instructions: %1, Cycles: %2, CPI: %3")
+            .arg(instructions)
+            .arg(cycles)
+            .arg(cpi, 0, 'f', 2),
+        5000
+        );
+
+
+    // QString msg = QString("Execution finished!\n\n"
+    //                       "Instructions: %1\n"
+    //                       "Cycles: %2\n"
+    //                       "CPI: %3")
+    //                   .arg(instructions)
+    //                   .arg(cycles)
+    //                   .arg(cpi, 0, 'f', 2);
+    // QMessageBox::information(this, "Complete", msg);
 }
 
 void MainWindow::onExecutionError(QString message)
@@ -1517,7 +1459,17 @@ void MainWindow::onExecutionError(QString message)
     updateExecutionInfo();
     refreshMemoryDisplay();
 
-    statusBar()->showMessage("Execution stopped", 3000);
+    if (errorconsole) {
+        errorconsole->addMessages({
+            "==========================================",
+            "EXECUTION ERROR:",
+            message.toStdString(),
+            "=========================================="
+        });
+    }
+
+    bottomPanel->changeTab();  // Switch to error console
+    statusBar()->showMessage("Execution error - check console", 5000);
     QMessageBox::critical(this, "Execution Error", message);
 }
 
@@ -1562,4 +1514,124 @@ void MainWindow::onPeriodicUpdate()
             onExecutionFinished(vm->instructions_retired_, vm->cycle_s_);
         }
     }
+}
+
+void MainWindow::startAnimatedExecution(int speed)
+{
+    int delayMs = 1000 / speed;
+    QTimer *stepTimer = new QTimer(this);
+
+    int *stepCount = new int(0);
+    const int MAX_STEPS = 100000;
+
+    RVSSVMPipelined *pipeVm = qobject_cast<RVSSVMPipelined *>(vm);
+
+    connect(stepTimer, &QTimer::timeout, this, [this, stepTimer, stepCount, pipeVm, MAX_STEPS]()
+            {
+                (*stepCount)++;
+
+                if (*stepCount > MAX_STEPS)
+                {
+                    qDebug() << "\n========== EMERGENCY STOP ==========";
+                    qDebug() << "Exceeded" << MAX_STEPS << "steps";
+
+                    stepTimer->stop();
+                    stepTimer->deleteLater();
+                    delete stepCount;
+
+                    updateExecutionInfo();
+                    refreshMemoryDisplay();
+
+                    wasStoppedByUser_ = true;
+                    // QMessageBox::warning(this, "Execution Stopped",
+                    //                      QString("Execution stopped after %1 steps.\n\n"
+                    //                              "Instructions: %2\nCycles: %3")
+                    //                          .arg(MAX_STEPS)
+                    //                          .arg(vm->instructions_retired_)
+                    //                          .arg(vm->cycle_s_));
+                    if (errorconsole) {
+                        errorconsole->addMessages({
+                            "==========================================",
+                            QString("EMERGENCY STOP: Exceeded %1 steps").arg(MAX_STEPS).toStdString(),
+                            QString("Instructions executed: %1").arg(vm->instructions_retired_).toStdString(),
+                            QString("Cycles: %1").arg(vm->cycle_s_).toStdString(),
+                            "=========================================="
+                        });
+                    }
+
+                    bottomPanel->changeTab();
+                    return;
+
+                }
+
+                uint64_t pc = vm->GetProgramCounter();
+                uint64_t progSize = vm->GetProgramSize();
+                bool pipeEmpty = vm->IsPipelineEmpty();
+                bool stopReq = vm->IsStopRequested();
+
+                if (*stepCount % 100 == 0 || pc >= progSize)
+                {
+                    qDebug() << "[Step" << *stepCount << "] PC:" << QString::number(pc, 16)
+                    << "| Pipeline Empty:" << pipeEmpty
+                    << "| Instr:" << vm->instructions_retired_;
+                }
+
+                bool shouldStop = false;
+                if (pipeVm)
+                {
+                    shouldStop = (pc >= progSize && pipeEmpty) || stopReq;
+                }
+                else
+                {
+                    shouldStop = (pc >= progSize) || stopReq;
+                }
+
+                if (shouldStop)
+                {
+                    qDebug() << "\n========= EXECUTION END =========";
+                    qDebug() << "Instructions:" << vm->instructions_retired_;
+                    qDebug() << "Cycles:" << vm->cycle_s_;
+
+                    stepTimer->stop();
+                    stepTimer->deleteLater();
+                    delete stepCount;
+
+                    updateExecutionInfo();
+                    refreshMemoryDisplay();
+
+                    double cpi = vm->instructions_retired_ > 0
+                                     ? (double)vm->cycle_s_ / vm->instructions_retired_ : 0.0;
+
+                    if (wasStoppedByUser_)
+                    {
+                        // User pressed Stop or Pause
+                        if (errorconsole) {
+                            errorconsole->addMessages({
+                                "==========================================",
+                                "Execution STOPPED by user",
+                                QString("Instructions: %1").arg(vm->instructions_retired_).toStdString(),
+                                QString("Cycles: %1").arg(vm->cycle_s_).toStdString(),
+                                QString("CPI: %1").arg(cpi, 0, 'f', 2).toStdString(),
+                                "=========================================="
+                            });
+                        }
+
+                        statusBar()->showMessage(
+                            QString("STOPPED - Instructions: %1, Cycles: %2, CPI: %3")
+                                .arg(vm->instructions_retired_)
+                                .arg(vm->cycle_s_)
+                                .arg(cpi, 0, 'f', 2),
+                            5000
+                            );
+                    }
+                    return;
+                }
+
+                vm->Step();
+                updateRegisterTable();
+                highlightCurrentLine();
+                updateExecutionInfo();
+            });
+
+    stepTimer->start(delayMs);
 }

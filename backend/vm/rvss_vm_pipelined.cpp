@@ -48,10 +48,17 @@ void RVSSVMPipelined::Reset()
     emit pipelineStageChanged(0, "MEM_CLEAR");
     emit pipelineStageChanged(0, "WB_CLEAR");
 
-    branch_history_table_.assign(BHT_SIZE, true); // default predict taken
     branch_target_buffer_.assign(BHT_SIZE, 0);
-    // branch_prediction_enabled_ = false;
-    // dynamic_branch_prediction_enabled_ = false;
+    if (dynamic_branch_prediction_enabled_)
+    {
+        // Dynamic prediction: start conservative (NOT_TAKEN)
+        branch_history_table_.assign(BHT_SIZE, false);
+    }
+    else
+    {
+        // Static prediction: BHT not used, but initialize anyway
+        branch_history_table_.assign(BHT_SIZE, true);
+    }
 
     // Clear undo stack
     while (!pipeline_undo_stack_.empty())
@@ -62,31 +69,28 @@ void RVSSVMPipelined::Reset()
 
 void RVSSVMPipelined::IF_stage()
 {
-    // ✅ FIX 1: Handle PC updates FIRST (highest priority)
+    // Handle PC updates FIRST (highest priority)
     if (pc_update_pending_)
     {
         program_counter_ = pc_update_value_;
         pc_update_pending_ = false;
         pc_update_value_ = 0;
-        if_id_next_.valid = false; // flush IF
+        if_id_next_.valid = false;
         return;
     }
 
-    // ✅ FIX 2: Handle flush properly with return
     if (flush_pipeline_)
     {
-        if_id_next_.valid = false; // Insert NOP
-        return;                    // Don't fetch when flushing
+        if_id_next_.valid = false;
+        return;
     }
 
-    // ✅ FIX 3: Handle stall - preserve current IF/ID
     if (stall_)
     {
-        if_id_next_ = if_id_;  // Keep current instruction in IF/ID
-        return;  // Don't increment PC
+        if_id_next_ = if_id_;
+        return;
     }
 
-    // Check if we're beyond program bounds
     if (program_counter_ >= program_size_)
     {
         if_id_next_.valid = false;
@@ -96,22 +100,92 @@ void RVSSVMPipelined::IF_stage()
     // Default: fetch next sequential instruction
     uint64_t predicted_pc = program_counter_ + 4;
 
-    // Apply branch prediction if enabled
-    qDebug() << "branch enabled:" << branch_prediction_enabled_ ;
+    // ✅ REFACTORED: Mutually exclusive branch prediction modes
     if (branch_prediction_enabled_)
     {
         size_t index = (program_counter_ >> 2) % BHT_SIZE;
         uint64_t target = branch_target_buffer_[index];
-        bool predict_taken = true;
+        bool predict_taken = false;
 
+        qDebug() << "IF: PC:" << QString::number(program_counter_, 16)
+                 << "BTB Index:" << index
+                 << "BTB Target:" << QString::number(target, 16);
+
+        // In IF_stage(), around line 157:
         if (dynamic_branch_prediction_enabled_)
         {
-            predict_taken = branch_history_table_[index];
+            qDebug() << "IF: Using DYNAMIC branch prediction";
+
+            // Check if we have a BTB entry
+            if (target != 0)
+            {
+                // Use BHT to predict
+                predict_taken = branch_history_table_[index];
+                qDebug() << "IF: BTB hit - BHT predicts"
+                         << (predict_taken ? "TAKEN" : "NOT_TAKEN");
+            }
+            else
+            {
+                // BTB miss - first encounter, predict not taken
+                predict_taken = false;
+                qDebug() << "IF: BTB miss - predicting NOT_TAKEN";
+            }
+        }
+        else
+        {
+            // ============================================================
+            // STATIC PREDICTION: Backward taken, forward not taken
+            // ============================================================
+            qDebug() << "IF: Using STATIC branch prediction";
+
+            if (target != 0)
+            {
+                // We have a BTB entry - check branch direction
+                if (target < program_counter_)
+                {
+                    // Backward branch (likely a loop) - predict taken
+                    predict_taken = true;
+                    qDebug() << "IF: BACKWARD branch detected - predicting TAKEN";
+                }
+                else if (target > program_counter_)
+                {
+                    // Forward branch - predict not taken
+                    predict_taken = false;
+                    qDebug() << "IF: FORWARD branch detected - predicting NOT_TAKEN";
+                }
+                else
+                {
+                    // Self-loop (rare) - predict taken
+                    predict_taken = true;
+                    qDebug() << "IF: SELF-loop detected - predicting TAKEN";
+                }
+            }
+            else
+            {
+                // BTB miss - predict not taken (first encounter)
+                predict_taken = false;
+                qDebug() << "IF: BTB miss - predicting NOT_TAKEN (first encounter)";
+            }
         }
 
-        // Only predict taken if we have a valid target
+        // Apply prediction
         if (predict_taken && target != 0)
+        {
             predicted_pc = target;
+            qDebug() << "IF: Prediction = TAKEN, jumping to:"
+                     << QString::number(predicted_pc, 16);
+            if_id_next_.predicted_taken = predict_taken;
+        }
+        else
+        {
+            if_id_next_.predicted_taken = false;
+            qDebug() << "IF: Prediction = NOT_TAKEN, sequential PC:"
+                     << QString::number(predicted_pc, 16);
+        }
+    }
+    else
+    {
+        qDebug() << "IF: Branch prediction DISABLED - always sequential";
     }
 
     // Fetch instruction
@@ -119,9 +193,13 @@ void RVSSVMPipelined::IF_stage()
     if_id_next_.instruction = memory_controller_.ReadWord(program_counter_);
     if_id_next_.valid = true;
 
+    qDebug() << "IF: Fetched from:" << QString::number(program_counter_, 16)
+             << "Next PC:" << QString::number(predicted_pc, 16);
+
     // Update PC for next fetch
     program_counter_ = predicted_pc;
 }
+
 void RVSSVMPipelined::ID_stage()
 {
     qDebug() << "\n=== ID STAGE START ===";
@@ -153,6 +231,7 @@ void RVSSVMPipelined::ID_stage()
     uint32_t opcode = instr & 0x7f;
     uint8_t funct3 = (instr >> 12) & 0x7;
     uint8_t funct7 = (instr >> 25) & 0b1111111;
+    id_ex_next_.predicted_taken = if_id_.predicted_taken;
 
     qDebug() << "ID: PC:" << QString::number(if_id_.pc, 16);
     qDebug() << "ID: Instruction:" << QString::number(instr, 16);
@@ -592,44 +671,79 @@ void RVSSVMPipelined::EX_stage()
         qDebug() << "EX: Branch taken:" << take << "Target:" << QString::number(branch_target, 16);
 
         // ✅ FIX: Unified branch handling
+        // ✅ FIX: Unified branch handling
         if (branch_prediction_enabled_)
         {
             size_t index = (id_ex_.pc >> 2) % BHT_SIZE;
-            bool predicted_taken = false;
+            bool predicted_taken = id_ex_.predicted_taken;
 
             if (dynamic_branch_prediction_enabled_)
             {
-                // Get current prediction
+                // Get the prediction that was made in IF stage
                 predicted_taken = branch_history_table_[index];
-                qDebug() << "EX: Dynamic prediction - Predicted:" << predicted_taken << "Actual:" << take;
 
-                // Update predictor state
+                qDebug() << "EX: Dynamic prediction was:" << predicted_taken
+                         << "Actual:" << take;
+
+                // ✅ Update BHT state based on actual outcome
                 branch_history_table_[index] = take;
-            }
-            else
-            {
-                // Static prediction: predict taken if BTB has entry
-                predicted_taken = (branch_target_buffer_[index] != 0);
-                qDebug() << "EX: Static prediction - Predicted:" << predicted_taken << "Actual:" << take;
-            }
 
-            // ✅ FIX: Always update BTB when branch is taken (keep history)
-            if (take)
+                // ✅ Update BTB with target when branch is taken
+                if (take) {
+                    branch_target_buffer_[index] = branch_target;
+                    qDebug() << "EX: Updating BTB[" << index << "] with target:"
+                             << QString::number(branch_target, 16);
+                }
+            }
+            else  // Static prediction
             {
+                // Check if we had a BTB entry (means we predicted something)
+                uint64_t btb_target = branch_target_buffer_[index];
+
+                if (btb_target != 0)
+                {
+                    // We had a prediction - check what it was
+                    if (btb_target < id_ex_.pc)
+                    {
+                        // Backward branch - we predicted TAKEN
+                        predicted_taken = true;
+                    }
+                    else
+                    {
+                        // Forward branch - we predicted NOT_TAKEN
+                        predicted_taken = false;
+                    }
+                }
+                else
+                {
+                    // First time seeing this branch - predicted NOT_TAKEN
+                    predicted_taken = false;
+                }
+
+                qDebug() << "EX: Static prediction was:" << predicted_taken
+                         << "Actual:" << take;
+
+                // Always update BTB with the target
                 branch_target_buffer_[index] = branch_target;
             }
-            // Don't clear BTB on not-taken - maintain prediction history
 
-            // Handle misprediction
+            // ✅ Handle misprediction
             if (predicted_taken != take)
             {
                 qDebug() << "EX: *** BRANCH MISPREDICTION - FLUSHING ***";
+                qDebug() << "EX: Correcting PC to:"
+                         << QString::number(take ? branch_target : (id_ex_.pc + 4), 16);
+
                 pc_update_pending_ = true;
-                pc_update_value_ = next_pc;
+                pc_update_value_ = take ? branch_target : (id_ex_.pc + 4);
                 flush_pipeline_ = true;
             }
+            else
+            {
+                qDebug() << "EX: Branch prediction CORRECT!";
+            }
         }
-        else  // ✅ FIX: No prediction - only flush when branch is taken
+        else  // ✅ No prediction enabled - always flush when branch is taken
         {
             if (take)
             {
@@ -638,12 +752,16 @@ void RVSSVMPipelined::EX_stage()
                 pc_update_value_ = branch_target;
                 flush_pipeline_ = true;
             }
-            // If not taken, PC is already correct (sequential)
+            else
+            {
+                qDebug() << "EX: Branch not taken - continuing sequential execution";
+            }
         }
 
         ex_mem_next_.branch_taken = take;
         ex_mem_next_.branch_target = branch_target;
     }
+
 
     // Handle JAL
     if (opcode == 0b1101111) // JAL
@@ -1365,8 +1483,23 @@ void RVSSVMPipelined::SetPipelineConfig(bool hazardEnabled,
 
         branch_target_buffer_.assign(BHT_SIZE, 0);
         qDebug() << "buffer assigned";
-        if (dynamic_branch_prediction_enabled_)
-            branch_history_table_.assign(BHT_SIZE, true);
+        if (branch_prediction_enabled_)
+        {
+            branch_target_buffer_.assign(BHT_SIZE, 0);
+
+            // ✅ FIX: Initialize BHT based on prediction mode
+            if (dynamic_branch_prediction_enabled_)
+            {
+                // For dynamic prediction, start with NOT_TAKEN (false)
+                // This is more conservative and learns over time
+                branch_history_table_.assign(BHT_SIZE, false);
+            }
+            else
+            {
+                // For static prediction, we don't use BHT
+                branch_history_table_.assign(BHT_SIZE, true);
+            }
+        }
     }
 }
 
