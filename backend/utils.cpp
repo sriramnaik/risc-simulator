@@ -1,8 +1,4 @@
-/**
- * @file utils.cpp
- * @brief Contains utility functions for the VM.
- * @author Vishank Singh, https://github.com/VishankSingh
- */
+
 
 
 #include "utils.h"

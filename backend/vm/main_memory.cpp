@@ -1,8 +1,3 @@
-/**
- * @file main_memory.cpp
- * @brief Contains the implementation of the Memory class.
- * @author Vishank Singh, https://github.com/VishankSingh
- */
 
 #include "main_memory.h"
 #include "../globals.h"

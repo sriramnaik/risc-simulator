@@ -1,9 +1,3 @@
-/**
- * @file rvss_control_unit.cpp
- * @brief RVSS Control Unit implementation
- * @author Vishank Singh, https://github.com/VishankSingh
- */
-
 #include "rvss_control_unit.h"
 #include "../alu.h"
 

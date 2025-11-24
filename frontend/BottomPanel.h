@@ -1,38 +1,3 @@
-// #pragma once
-// #include <QWidget>
-// #include <QPushButton>
-// #include <QVBoxLayout>
-// #include <QHBoxLayout>
-// #include "ErrorConsole.h"
-// #include "DataSegment.h"
-// #include "memoryviewer.h"
-
-// class BottomPanel : public QWidget
-// {
-//     Q_OBJECT
-// public:
-//     explicit BottomPanel(QWidget *parent = nullptr);
-
-//     void togglePanel(bool showData); // programmatic toggle
-//     ErrorConsole* getConsole();
-//     DataSegment* getDataSegment();
-//     MemoryViewer* getMemoryViewer() const { return memoryViewer; }
-
-// private:
-//     QVBoxLayout *mainLayout;
-//     QHBoxLayout *buttonLayout;
-//     QPushButton *consoleButton;
-//     QPushButton *dataButton;
-
-//     ErrorConsole *console;
-//     DataSegment *dataSegment;
-//     MemoryViewer *memoryViewer;
-
-// private slots:
-//     void handleConsoleClicked();
-//     void handleDataClicked();
-// };
-
 #ifndef BOTTOMPANEL_H
 #define BOTTOMPANEL_H
 

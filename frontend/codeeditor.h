@@ -3,7 +3,6 @@
 
 #include <QPlainTextEdit>
 #include <QWidget>
-#include "autocompletewidget.h"
 #include <QTimer>
 
 
@@ -47,18 +46,6 @@ private:
     QMap<int, QSet<QString>> pipelineLabels;
     void paintPipelineStages(QPainter &painter, const QRect &rect);
 
-    AutoCompleteWidget* autoComplete_;
-    QPoint lastMousePos_;
-    bool autoCompleteActive_; ;
-
-    // Helper methods
-    void showAutoComplete();
-    void hideAutoComplete();
-    QString getWordUnderCursor() const;
-    QString getCurrentWord() const;
-    int getWordStartPosition() const;
-    void showInstructionTooltip(const QPoint& globalPos);
-    QString getInstructionAtPosition(const QPoint& pos) const;
 
 };
 

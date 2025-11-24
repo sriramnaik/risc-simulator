@@ -10,12 +10,7 @@
 #include <QString>
 #include <QRegularExpression>
 
-// #include "../../backend/assembler/parser.h"//
 
-// struct ErrorMessage {
-//     int line;     // "Error", "Warning", "Info"
-//     QString message;
-// };
 
 class ErrorConsole : public QWidget
 {

@@ -1,31 +1,3 @@
-// #include "bottompanel.h"
-
-// BottomPanel::BottomPanel(QWidget *parent) : QWidget(parent)
-// {
-//     QVBoxLayout *layout = new QVBoxLayout(this);
-//     layout->setContentsMargins(0,0,0,0);
-
-//     console = new ErrorConsole(this);
-//     dataSegment = new DataSegment(this);
-
-//     // Show console by default
-//     console->setVisible(true);
-//     dataSegment->setVisible(false);
-
-//     layout->addWidget(console);
-//     layout->addWidget(dataSegment);
-// }
-
-// void BottomPanel::togglePanel(bool showData)
-// {
-//     console->setVisible(!showData);
-//     dataSegment->setVisible(showData);
-// }
-
-// ErrorConsole* BottomPanel::getConsole() { return console; }
-// DataSegment* BottomPanel::getDataSegment() { return dataSegment; }
-
-
 #include "BottomPanel.h"
 
 BottomPanel::BottomPanel(QWidget *parent) : QWidget(parent)

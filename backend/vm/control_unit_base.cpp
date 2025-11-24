@@ -1,8 +1,4 @@
-/**
- * @file control_unit_base.cpp
- * @brief Control unit base class implementation
- * @author Vishank Singh, https://github.com/VishankSingh
- */
+
 
 #include "control_unit_base.h"
 

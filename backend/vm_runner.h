@@ -1,8 +1,4 @@
-/**
- * @file vm_runner.h
- * @brief This file contains the declaration of the VMRunner class
- * @author Vishank Singh, https://github.com/VishankSingh
- */
+
 
 #ifndef VM_RUNNER_H
 #define VM_RUNNER_H

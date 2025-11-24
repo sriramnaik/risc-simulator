@@ -1,7 +1,4 @@
-/**
- * @file hazard_unit.cpp
- * @brief Hazard detection unit implementation
- */
+
 
 #include "hazardUnit.h"
 

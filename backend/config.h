@@ -9,10 +9,7 @@
 #include <fstream>
 #include <sstream>
 
-/**
- * @namespace vm_config
- * @brief Namespace for VM configuration management.
- */
+
 namespace vm_config {
 enum class VmTypes {
   SINGLE_STAGE,

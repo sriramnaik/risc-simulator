@@ -1,7 +1,4 @@
-/**
- * @file pipeline_registers.h
- * @brief Pipeline registers for 5-stage pipeline
- */
+
 #ifndef PIPELINE_REGISTERS_H
 #define PIPELINE_REGISTERS_H
 

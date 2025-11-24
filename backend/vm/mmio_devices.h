@@ -1,8 +1,4 @@
-/**
- * @file mmio_devices.h
- * @brief 
- * @author Vishank Singh, https://github.com/VishankSingh
- */
+
 #pragma once
 
 #include <cstdint>

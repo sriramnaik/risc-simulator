@@ -1,8 +1,4 @@
-/**
- * @file alu.h
- * @brief Contains the definition of the alu class for performing arithmetic and logic operations.
- * @author Vishank Singh, httpa://github.com/VishankSingh
- */
+
 #ifndef ALU_H
 #define ALU_H
 
