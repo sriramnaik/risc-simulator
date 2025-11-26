@@ -32,17 +32,20 @@ public:
     // QMap<int, QString>  pipelineLabels;
 
     const QMap<int, QSet<QString>>& getPipelineLabels();
+    void lineNumberAreaClicked(const QPoint &pos);
 
 protected:
-    void resizeEvent(QResizeEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;  // capture mouse clicks
 
 private slots:
     void updateLineNumberAreaWidth(int newBlockCount);
     void updateLineNumberArea(const QRect &rect, int dy);
     void highlightCurrentLine();
 
+
 private:
     QWidget *lineNumberArea;
+    QSet<int> breakpoints;
     QMap<int, QSet<QString>> pipelineLabels;
     void paintPipelineStages(QPainter &painter, const QRect &rect);
 
@@ -65,7 +68,6 @@ protected:
 
 private:
     CodeEditor *codeEditor;
-
 
 };
 

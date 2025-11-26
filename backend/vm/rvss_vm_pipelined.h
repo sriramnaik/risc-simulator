@@ -35,14 +35,16 @@ private:
         uint8_t funct3 = 0, funct7 = 0;
         int32_t imm = 0;
 
-        uint64_t reg1_value = 0, reg2_value = 0;
+        bool rs1_is_float = false;  // NEW
+        bool rs2_is_float = false;  // NEW
+
+        uint64_t reg1_value = 0, reg2_value = 0,reg3_value;
 
         bool reg_write = false, mem_read = false, mem_write = false;
         bool mem_to_reg = false, alu_src = false, branch = false, is_float = false;
 
         // bool is_float = false;  // Add this
         bool predicted_taken = false;
-        uint64_t reg3_value = 0;
 
     } id_ex_, id_ex_next_;
 

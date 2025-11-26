@@ -344,6 +344,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(resetAction, &QAction::triggered, this, &MainWindow::onReset);
     connect(processor, &QAction::triggered, this, &MainWindow::showProcessorSelection);
 
+
     // --- Window setup ---
     // qDebug() << "[MainWindow] Setting up window";
     setWindowTitle("RISC-V Simulator");
@@ -617,6 +618,7 @@ void MainWindow::onAssemble()
             errorconsole->addMessages({"Error: No file is open!"});
         }
         statusBar()->showMessage("Error: No file is open", 3000);
+        bottomPanel->changeTab();
         return;
     }
 
@@ -626,6 +628,7 @@ void MainWindow::onAssemble()
         executionThread_->requestStop();
         executionThread_->wait(2000);
         updateTimer_->stop();
+        bottomPanel->changeTab();
     }
 
     isPaused_ = false;
@@ -657,6 +660,7 @@ void MainWindow::onAssemble()
         if (!saved){
             if (errorconsole) {
                 errorconsole->addMessages({"Error: Could not save file before assembling."});
+                bottomPanel->changeTab();
             }
             return;
         }}
@@ -670,6 +674,7 @@ void MainWindow::onAssemble()
     {
         if (errorconsole) {
             errorconsole->addMessages({"Error: Assembler not initialized!"});
+            bottomPanel->changeTab();
         }
         statusBar()->showMessage("Error: Assembler not initialized", 3000);
         return;
@@ -733,6 +738,7 @@ void MainWindow::onRun()
     {
         if (errorconsole) {
             errorconsole->addMessages({"Error: No file is open!"});
+            bottomPanel->changeTab();
         }
         statusBar()->showMessage("Error: No file is open", 3000);
         return;
@@ -742,6 +748,7 @@ void MainWindow::onRun()
     {
         if (errorconsole) {
             errorconsole->addMessages({"Error: VM not initialized!"});
+            bottomPanel->changeTab();
         }
         statusBar()->showMessage("Error: VM not initialized", 3000);
         return;
@@ -751,6 +758,7 @@ void MainWindow::onRun()
     {
         if (errorconsole) {
             errorconsole->addMessages({"Error: Please fix assembly errors before running."});
+            bottomPanel->changeTab();
         }
         bottomPanel->changeTab();  // Switch to error console
         statusBar()->showMessage("Cannot run: Assembly errors present", 3000);
@@ -761,6 +769,7 @@ void MainWindow::onRun()
     {
         if (errorconsole) {
             errorconsole->addMessages({"Info: Execution already in progress!"});
+            bottomPanel->changeTab();
         }
         statusBar()->showMessage("Execution already in progress", 3000);
         return;
@@ -1635,3 +1644,4 @@ void MainWindow::startAnimatedExecution(int speed)
 
     stepTimer->start(delayMs);
 }
+

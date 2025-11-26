@@ -21,7 +21,7 @@ RVSSVM::~RVSSVM() = default;
 
 void RVSSVM::Fetch()
 {
-    instruction_pc_= program_counter_;
+    instruction_pc_ = program_counter_;
     current_instruction_ = memory_controller_.ReadWord(program_counter_);
     UpdateProgramCounter(4);
 }
@@ -40,24 +40,30 @@ void RVSSVM::Execute()
     qDebug() << "PC:" << QString::number(program_counter_ - 4, 16)
              << "Instruction:" << QString::number(current_instruction_, 16);
 
-    if (opcode == 0b1110011 && funct3 == 0b000) {
+    if (opcode == 0b1110011 && funct3 == 0b000)
+    {
         qDebug() << ">>> SYSCALL DETECTED <<<";
         HandleSyscall();
         return;
     }
 
-    if (instruction_set::isFInstruction(current_instruction_)) {
+    if (instruction_set::isFInstruction(current_instruction_))
+    {
         qDebug() << ">>> FLOAT INSTRUCTION DETECTED <<<";
         ExecuteFloat();
         return;
-    } else if (instruction_set::isDInstruction(current_instruction_)) {
+    }
+    else if (instruction_set::isDInstruction(current_instruction_))
+    {
         qDebug() << ">>> DOUBLE INSTRUCTION DETECTED <<<";
         if (registers_->GetIsa() == ISA::RV64)
             ExecuteDouble();
         else
             emit vmError("Double-precision not supported in RV32");
         return;
-    } else if (opcode == 0b1110011) {
+    }
+    else if (opcode == 0b1110011)
+    {
         qDebug() << ">>> CSR INSTRUCTION DETECTED <<<";
         ExecuteCsr();
         return;
@@ -71,7 +77,8 @@ void RVSSVM::Execute()
     uint64_t reg2_value = registers_->ReadGpr(rs2);
 
     // Load instructions (LB, LH, LW, LD, LBU, LHU, LWU)
-    if (opcode == 0b0000011) {
+    if (opcode == 0b0000011)
+    {
         qDebug() << ">>> LOAD Instruction";
         qDebug() << "Base address (rs1):" << QString::number(reg1_value, 16);
         qDebug() << "Immediate offset:" << imm;
@@ -81,7 +88,8 @@ void RVSSVM::Execute()
     }
 
     // Store instructions (SB, SH, SW, SD)
-    if (opcode == 0b0100011) {
+    if (opcode == 0b0100011)
+    {
         qDebug() << ">>> STORE Instruction";
         qDebug() << "Base address (rs1):" << QString::number(reg1_value, 16);
         qDebug() << "Immediate offset:" << imm;
@@ -92,7 +100,8 @@ void RVSSVM::Execute()
 
     // For other instructions, run the ALU
     bool overflow = false;
-    if (control_unit_.GetAluSrc()) {
+    if (control_unit_.GetAluSrc())
+    {
         reg2_value = static_cast<uint64_t>(static_cast<int64_t>(imm));
     }
 
@@ -100,26 +109,32 @@ void RVSSVM::Execute()
     std::tie(execution_result_, overflow) = alu_.execute(aluOperation, reg1_value, reg2_value);
 
     // Branch instructions (JAL and JALR)
-    if (opcode == 0b1100111 || opcode == 0b1101111) {
+    if (opcode == 0b1100111 || opcode == 0b1101111)
+    {
         return_address_ = program_counter_;
-        if (opcode == 0b1100111) {
+        if (opcode == 0b1100111)
+        {
             // JALR: jump to rs1 + imm, set PC directly
-            program_counter_ = execution_result_ & ~1ULL;  // Clear LSB per RISC-V spec
-        } else {
+            program_counter_ = execution_result_ & ~1ULL; // Clear LSB per RISC-V spec
+        }
+        else
+        {
             // JAL: jump to PC + imm
             program_counter_ = instruction_pc_ + imm;
         }
         next_pc_ = return_address_;
     }
     // Conditional branches
-    else if (opcode == 0b1100011) {
+    else if (opcode == 0b1100011)
+    {
         qDebug() << ">>> BRANCH Instruction";
         qDebug() << "rs1 value:" << QString::number(reg1_value, 16) << "(" << (int64_t)reg1_value << ")";
         qDebug() << "rs2 value:" << QString::number(reg2_value, 16) << "(" << (int64_t)reg2_value << ")";
 
         bool takeBranch = false;
 
-        switch (funct3) {
+        switch (funct3)
+        {
         case 0b000: // BEQ - Branch if Equal
             takeBranch = (reg1_value == reg2_value);
             qDebug() << "BEQ: rs1 == rs2 ?" << takeBranch;
@@ -151,15 +166,19 @@ void RVSSVM::Execute()
             break;
         }
 
-        if (takeBranch) {
+        if (takeBranch)
+        {
             qDebug() << "Branch TAKEN to PC + offset:" << QString::number(instruction_pc_ + imm, 16);
             program_counter_ = instruction_pc_ + imm;
-        } else {
+        }
+        else
+        {
             qDebug() << "Branch NOT taken, continuing to:" << QString::number(program_counter_, 16);
         }
     }
     // AUIPC
-    else if (opcode == 0b0010111) {
+    else if (opcode == 0b0010111)
+    {
         execution_result_ = instruction_pc_ + (imm << 12);
     }
 }
@@ -227,12 +246,14 @@ void RVSSVM::WriteMemory()
     if (opcode == 0b1110011 && funct3 == 0b000)
         return;
 
-    if (instruction_set::isFInstruction(current_instruction_)) {
+    if (instruction_set::isFInstruction(current_instruction_))
+    {
         qDebug() << ">>> Calling WriteMemoryFloat()";
         WriteMemoryFloat();
         return;
     }
-    else if (instruction_set::isDInstruction(current_instruction_)) {
+    else if (instruction_set::isDInstruction(current_instruction_))
+    {
         qDebug() << ">>> Calling WriteMemoryDouble()";
         if (registers_->GetIsa() == ISA::RV64)
             WriteMemoryDouble();
@@ -241,11 +262,13 @@ void RVSSVM::WriteMemory()
         return;
     }
 
-    if (control_unit_.GetMemRead()) {
+    if (control_unit_.GetMemRead())
+    {
         qDebug() << ">>> Memory READ";
         qDebug() << "Address:" << QString::number(execution_result_, 16);
 
-        switch (funct3) {
+        switch (funct3)
+        {
         case 0b000: // LB - Load Byte (signed)
             memory_result_ = static_cast<int8_t>(memory_controller_.ReadByte(execution_result_));
             qDebug() << "LB - Value:" << QString::number(memory_result_, 16) << "(" << (int8_t)memory_result_ << ")";
@@ -259,10 +282,13 @@ void RVSSVM::WriteMemory()
             qDebug() << "LW - Value:" << QString::number(memory_result_, 16) << "(" << (int32_t)memory_result_ << ")";
             break;
         case 0b011: // LD - Load Doubleword
-            if (registers_->GetIsa() == ISA::RV64) {
+            if (registers_->GetIsa() == ISA::RV64)
+            {
                 memory_result_ = memory_controller_.ReadDoubleWord(execution_result_);
                 qDebug() << "LD - Value:" << QString::number(memory_result_, 16) << "(" << (int64_t)memory_result_ << ")";
-            } else {
+            }
+            else
+            {
                 emit vmError("LD instruction not supported in RV32");
                 return;
             }
@@ -282,16 +308,19 @@ void RVSSVM::WriteMemory()
         }
     }
 
-    if (control_unit_.GetMemWrite()) {
+    if (control_unit_.GetMemWrite())
+    {
         qDebug() << ">>> Memory WRITE";
         qDebug() << "Address:" << QString::number(execution_result_, 16);
         qDebug() << "Value to write (rs2):" << QString::number(registers_->ReadGpr(rs2), 16);
 
-        if (recording_enabled_) {
+        if (recording_enabled_)
+        {
             MemoryChange mem_change;
             mem_change.address = execution_result_;
 
-            switch (funct3) {
+            switch (funct3)
+            {
             case 0b000: // SB
                 mem_change.old_bytes_vec.push_back(memory_controller_.ReadByte(execution_result_));
                 mem_change.new_bytes_vec.push_back(registers_->ReadGpr(rs2) & 0xFF);
@@ -317,14 +346,17 @@ void RVSSVM::WriteMemory()
                 break;
             }
             case 0b011: // SD
-                if (registers_->GetIsa() == ISA::RV64) {
+                if (registers_->GetIsa() == ISA::RV64)
+                {
                     uint64_t old_val = memory_controller_.ReadDoubleWord(execution_result_);
                     for (int i = 0; i < 8; ++i)
                         mem_change.old_bytes_vec.push_back((old_val >> (i * 8)) & 0xFF);
                     uint64_t new_val = registers_->ReadGpr(rs2);
                     for (int i = 0; i < 8; ++i)
                         mem_change.new_bytes_vec.push_back((new_val >> (i * 8)) & 0xFF);
-                } else {
+                }
+                else
+                {
                     emit vmError("SD instruction not supported in RV32");
                     return;
                 }
@@ -333,7 +365,8 @@ void RVSSVM::WriteMemory()
             current_delta_.memory_changes.push_back(mem_change);
         }
 
-        switch (funct3) {
+        switch (funct3)
+        {
         case 0b000: // SB
             memory_controller_.WriteByte(execution_result_, registers_->ReadGpr(rs2) & 0xFF);
             qDebug() << "SB - Wrote byte:" << QString::number(registers_->ReadGpr(rs2) & 0xFF, 16);
@@ -347,10 +380,13 @@ void RVSSVM::WriteMemory()
             qDebug() << "SW - Wrote word:" << QString::number(registers_->ReadGpr(rs2) & 0xFFFFFFFF, 16);
             break;
         case 0b011: // SD
-            if (registers_->GetIsa() == ISA::RV64) {
+            if (registers_->GetIsa() == ISA::RV64)
+            {
                 memory_controller_.WriteDoubleWord(execution_result_, registers_->ReadGpr(rs2));
                 qDebug() << "SD - Wrote doubleword:" << QString::number(registers_->ReadGpr(rs2), 16);
-            } else {
+            }
+            else
+            {
                 emit vmError("SD instruction not supported in RV32");
                 return;
             }
@@ -370,12 +406,14 @@ void RVSSVM::WriteBack()
 
     if (opcode == 0b1110011 && funct3 == 0b000)
         return;
-    if (instruction_set::isFInstruction(current_instruction_)) {
+    if (instruction_set::isFInstruction(current_instruction_))
+    {
         qDebug() << ">>> Calling WriteBackFloat()";
         WriteBackFloat();
         return;
     }
-    else if (instruction_set::isDInstruction(current_instruction_)) {
+    else if (instruction_set::isDInstruction(current_instruction_))
+    {
         qDebug() << ">>> Calling WriteBackDouble()";
         if (registers_->GetIsa() == ISA::RV64)
             WriteBackDouble();
@@ -383,15 +421,18 @@ void RVSSVM::WriteBack()
             emit vmError("Double-precision writeback not supported in RV32");
         return;
     }
-    else if (opcode == 0b1110011) {
+    else if (opcode == 0b1110011)
+    {
         qDebug() << ">>> Calling WriteBackCsr()";
         WriteBackCsr();
         return;
     }
 
-    if (control_unit_.GetRegWrite()) {
+    if (control_unit_.GetRegWrite())
+    {
         uint64_t new_value = 0;
-        switch (opcode) {
+        switch (opcode)
+        {
         case 0b0110011:
         case 0b0010011:
         case 0b0010111:
@@ -411,7 +452,8 @@ void RVSSVM::WriteBack()
             break;
         }
 
-        if (recording_enabled_) {
+        if (recording_enabled_)
+        {
             RegisterChange change;
             change.reg_type = 0;
             change.reg_index = rd;
@@ -445,15 +487,19 @@ void RVSSVM::ExecuteFloat()
     uint8_t fcsr_status = 0;
     int32_t imm = ImmGenerator(current_instruction_);
 
-    if (rm == 0b111) {
+    if (rm == 0b111)
+    {
         rm = registers_->ReadCsr(0x002);
         qDebug() << "Using dynamic rounding mode from CSR:" << rm;
-    } else {
+    }
+    else
+    {
         qDebug() << "Rounding Mode:" << rm;
     }
 
     // Handle FLW
-    if (opcode == 0b0000111) {
+    if (opcode == 0b0000111)
+    {
         qDebug() << ">>> FLW Instruction (Load Float Word)";
         uint64_t base_addr = registers_->ReadGpr(rs1);
         qDebug() << "Base GPR[" << rs1 << "]:" << QString::number(base_addr, 16);
@@ -465,7 +511,8 @@ void RVSSVM::ExecuteFloat()
     }
 
     // Handle FSW
-    if (opcode == 0b0100111) {
+    if (opcode == 0b0100111)
+    {
         qDebug() << ">>> FSW Instruction (Store Float Word)";
         uint64_t base_addr = registers_->ReadGpr(rs1);
         uint64_t fpr_value = registers_->ReadFpr(rs2);
@@ -495,24 +542,31 @@ void RVSSVM::ExecuteFloat()
     qDebug() << "FPR[" << rs3 << "]:" << QString::number(reg3_value, 16);
 
     // Validate NaN-boxing
-    auto validate_sp = [](uint64_t val, int reg_num) -> uint64_t {
-        if ((val & 0xFFFFFFFF00000000ULL) != 0xFFFFFFFF00000000ULL) {
+    auto validate_sp = [](uint64_t val, int reg_num) -> uint64_t
+    {
+        if ((val & 0xFFFFFFFF00000000ULL) != 0xFFFFFFFF00000000ULL)
+        {
             qDebug() << "Warning: FPR[" << reg_num << "] not NaN-boxed:" << QString::number(val, 16);
-            return 0xFFFFFFFF7FC00000ULL;  // Return properly NaN-boxed canonical NaN
+            return 0xFFFFFFFF7FC00000ULL; // Return properly NaN-boxed canonical NaN
         }
         return val & 0xFFFFFFFF;
     };
 
     // Handle GPR source instructions
-    if (funct7 == 0b1101000) {
+    if (funct7 == 0b1101000)
+    {
         qDebug() << ">>> FCVT.S.W/WU - Reading from GPR";
         reg1_value = registers_->ReadGpr(rs1);
         qDebug() << "GPR[" << rs1 << "]:" << QString::number(reg1_value, 16) << "(" << (int32_t)reg1_value << ")";
-    } else if (funct7 == 0b1111000) {
+    }
+    else if (funct7 == 0b1111000)
+    {
         qDebug() << ">>> FMV.W.X - Reading from GPR";
         reg1_value = registers_->ReadGpr(rs1);
         qDebug() << "GPR[" << rs1 << "]:" << QString::number(reg1_value, 16);
-    } else {
+    }
+    else
+    {
         // Validate and decode float values
         reg1_value = validate_sp(reg1_value, rs1);
         reg2_value = validate_sp(reg2_value, rs2);
@@ -529,7 +583,8 @@ void RVSSVM::ExecuteFloat()
         qDebug() << "Float values: f1=" << f1 << "f2=" << f2 << "f3=" << f3;
     }
 
-    if (control_unit_.GetAluSrc()) {
+    if (control_unit_.GetAluSrc())
+    {
         reg2_value = static_cast<uint64_t>(static_cast<int64_t>(imm));
         qDebug() << "Using immediate:" << imm;
     }
@@ -542,12 +597,15 @@ void RVSSVM::ExecuteFloat()
     qDebug() << "Execution Result:" << QString::number(execution_result_, 16);
     qDebug() << "FCSR Status:" << QString::number(fcsr_status, 2).rightJustified(8, '0');
 
-    if (funct7 != 0b1100000) {
+    if (funct7 != 0b1100000)
+    {
         uint32_t temp = execution_result_ & 0xFFFFFFFF;
         float result_float;
         std::memcpy(&result_float, &temp, sizeof(float));
         qDebug() << "Result as float:" << result_float;
-    } else {
+    }
+    else
+    {
         qDebug() << "Result as integer:" << (int32_t)execution_result_;
     }
 
@@ -558,7 +616,8 @@ void RVSSVM::ExecuteFloat()
 
 void RVSSVM::ExecuteDouble()
 {
-    if (registers_->GetIsa() != ISA::RV64) {
+    if (registers_->GetIsa() != ISA::RV64)
+    {
         emit vmError("Double-precision not supported in RV32");
         return;
     }
@@ -581,15 +640,19 @@ void RVSSVM::ExecuteDouble()
     uint8_t fcsr_status = 0;
     int32_t imm = ImmGenerator(current_instruction_);
 
-    if (rm == 0b111) {
+    if (rm == 0b111)
+    {
         rm = registers_->ReadCsr(0x002);
         qDebug() << "Using dynamic rounding mode from CSR:" << rm;
-    } else {
+    }
+    else
+    {
         qDebug() << "Rounding Mode:" << rm;
     }
 
     // Handle FLD
-    if (opcode == 0b0000111) {
+    if (opcode == 0b0000111)
+    {
         qDebug() << ">>> FLD Instruction (Load Double)";
         uint64_t base_addr = registers_->ReadGpr(rs1);
         qDebug() << "Base GPR[" << rs1 << "]:" << QString::number(base_addr, 16);
@@ -601,7 +664,8 @@ void RVSSVM::ExecuteDouble()
     }
 
     // Handle FSD
-    if (opcode == 0b0100111) {
+    if (opcode == 0b0100111)
+    {
         qDebug() << ">>> FSD Instruction (Store Double)";
         uint64_t base_addr = registers_->ReadGpr(rs1);
         uint64_t fpr_value = registers_->ReadFpr(rs2);
@@ -630,15 +694,20 @@ void RVSSVM::ExecuteDouble()
     qDebug() << "FPR[" << rs3 << "]:" << QString::number(reg3_value, 16);
 
     // Handle GPR source instructions
-    if (funct7 == 0b1101001) {
+    if (funct7 == 0b1101001)
+    {
         qDebug() << ">>> FCVT.D.W/WU/L/LU - Reading from GPR";
         reg1_value = registers_->ReadGpr(rs1);
         qDebug() << "GPR[" << rs1 << "]:" << QString::number(reg1_value, 16) << "(" << (int64_t)reg1_value << ")";
-    } else if (funct7 == 0b1111001) {
+    }
+    else if (funct7 == 0b1111001)
+    {
         qDebug() << ">>> FMV.D.X - Reading from GPR";
         reg1_value = registers_->ReadGpr(rs1);
         qDebug() << "GPR[" << rs1 << "]:" << QString::number(reg1_value, 16);
-    } else {
+    }
+    else
+    {
         // Decode double values
         double d1, d2, d3;
         std::memcpy(&d1, &reg1_value, sizeof(double));
@@ -648,7 +717,8 @@ void RVSSVM::ExecuteDouble()
         qDebug() << "Double values: d1=" << d1 << "d2=" << d2 << "d3=" << d3;
     }
 
-    if (control_unit_.GetAluSrc()) {
+    if (control_unit_.GetAluSrc())
+    {
         reg2_value = static_cast<uint64_t>(static_cast<int64_t>(imm));
         qDebug() << "Using immediate:" << imm;
     }
@@ -661,11 +731,14 @@ void RVSSVM::ExecuteDouble()
     qDebug() << "Execution Result:" << QString::number(execution_result_, 16);
     qDebug() << "FCSR Status:" << QString::number(fcsr_status, 2).rightJustified(8, '0');
 
-    if (funct7 != 0b1100001) {
+    if (funct7 != 0b1100001)
+    {
         double result_double;
         std::memcpy(&result_double, &execution_result_, sizeof(double));
         qDebug() << "Result as double:" << result_double;
-    } else {
+    }
+    else
+    {
         qDebug() << "Result as integer:" << (int64_t)execution_result_;
     }
 
@@ -682,7 +755,8 @@ void RVSSVM::WriteMemoryFloat()
     qDebug() << "\n========== WriteMemoryFloat() ==========";
     qDebug() << "Address:" << QString::number(execution_result_, 16);
 
-    if (control_unit_.GetMemRead()) {
+    if (control_unit_.GetMemRead())
+    {
         qDebug() << ">>> Memory READ (FLW)";
         uint32_t raw_value = memory_controller_.ReadWord(execution_result_);
         qDebug() << "Raw value from memory:" << QString::number(raw_value, 16);
@@ -695,7 +769,8 @@ void RVSSVM::WriteMemoryFloat()
         qDebug() << "NaN-boxed result:" << QString::number(memory_result_, 16);
     }
 
-    if (control_unit_.GetMemWrite()) {
+    if (control_unit_.GetMemWrite())
+    {
         qDebug() << ">>> Memory WRITE (FSW)";
         uint64_t fpr_full = registers_->ReadFpr(rs2);
         uint32_t float_bits = fpr_full & 0xFFFFFFFF;
@@ -707,7 +782,8 @@ void RVSSVM::WriteMemoryFloat()
         std::memcpy(&f_val, &float_bits, sizeof(float));
         qDebug() << "Value as float:" << f_val;
 
-        if (recording_enabled_) {
+        if (recording_enabled_)
+        {
             MemoryChange mem_change;
             mem_change.address = execution_result_;
             uint32_t old_val = memory_controller_.ReadWord(execution_result_);
@@ -732,7 +808,8 @@ void RVSSVM::WriteMemoryFloat()
 
 void RVSSVM::WriteMemoryDouble()
 {
-    if (registers_->GetIsa() != ISA::RV64) {
+    if (registers_->GetIsa() != ISA::RV64)
+    {
         emit vmError("Double-precision store/read not supported in RV32");
         return;
     }
@@ -742,7 +819,8 @@ void RVSSVM::WriteMemoryDouble()
     qDebug() << "\n========== WriteMemoryDouble() ==========";
     qDebug() << "Address:" << QString::number(execution_result_, 16);
 
-    if (control_unit_.GetMemRead()) {
+    if (control_unit_.GetMemRead())
+    {
         qDebug() << ">>> Memory READ (FLD)";
         memory_result_ = memory_controller_.ReadDoubleWord(execution_result_);
         qDebug() << "Raw value from memory:" << QString::number(memory_result_, 16);
@@ -752,7 +830,8 @@ void RVSSVM::WriteMemoryDouble()
         qDebug() << "Value as double:" << d_val;
     }
 
-    if (control_unit_.GetMemWrite()) {
+    if (control_unit_.GetMemWrite())
+    {
         qDebug() << ">>> Memory WRITE (FSD)";
         uint64_t fpr_value = registers_->ReadFpr(rs2);
         qDebug() << "FPR[" << rs2 << "]:" << QString::number(fpr_value, 16);
@@ -761,7 +840,8 @@ void RVSSVM::WriteMemoryDouble()
         std::memcpy(&d_val, &fpr_value, sizeof(double));
         qDebug() << "Value as double:" << d_val;
 
-        if (recording_enabled_) {
+        if (recording_enabled_)
+        {
             MemoryChange mem_change;
             mem_change.address = execution_result_;
             uint64_t old_val = memory_controller_.ReadDoubleWord(execution_result_);
@@ -795,7 +875,8 @@ void RVSSVM::WriteBackFloat()
     qDebug() << "rd:" << rd << "Opcode:" << QString::number(opcode, 2).rightJustified(7, '0')
              << "Funct7:" << QString::number(funct7, 2).rightJustified(7, '0');
 
-    if (!control_unit_.GetRegWrite()) {
+    if (!control_unit_.GetRegWrite())
+    {
         qDebug() << "RegWrite not enabled, skipping";
         qDebug() << "======================================\n";
         return;
@@ -803,7 +884,8 @@ void RVSSVM::WriteBackFloat()
 
     uint64_t value;
 
-    if (opcode == 0b0000111) {
+    if (opcode == 0b0000111)
+    {
         qDebug() << ">>> FLW Writeback";
         value = memory_result_;
         qDebug() << "memory_result_:" << QString::number(value, 16);
@@ -813,12 +895,14 @@ void RVSSVM::WriteBackFloat()
         std::memcpy(&f_val, &float_bits, sizeof(float));
         qDebug() << "Value as float:" << f_val;
     }
-    else if (funct7 == 0b1100000) {
+    else if (funct7 == 0b1100000)
+    {
         qDebug() << ">>> FCVT.W.S/WU.S - Writing to GPR";
         value = execution_result_;
         qDebug() << "Integer result:" << (int32_t)value;
 
-        if (recording_enabled_) {
+        if (recording_enabled_)
+        {
             RegisterChange change;
             change.reg_type = 0;
             change.reg_index = rd;
@@ -832,12 +916,14 @@ void RVSSVM::WriteBackFloat()
         qDebug() << "======================================\n";
         return;
     }
-    else if (funct7 == 0b1110000) {
+    else if (funct7 == 0b1110000)
+    {
         qDebug() << ">>> FMV.X.W - Writing to GPR";
         value = execution_result_;
         qDebug() << "Bit pattern:" << QString::number(value, 16);
 
-        if (recording_enabled_) {
+        if (recording_enabled_)
+        {
             RegisterChange change;
             change.reg_type = 0;
             change.reg_index = rd;
@@ -851,7 +937,26 @@ void RVSSVM::WriteBackFloat()
         qDebug() << "======================================\n";
         return;
     }
-    else {
+    else if (funct7 == 0b1010000)
+    { // FEQ.S, FLT.S, FLE.S
+        qDebug() << ">>> FP Comparison - Writing boolean to GPR";
+        value = execution_result_; // Should be 0 or 1
+
+        if (recording_enabled_)
+        {
+            RegisterChange change;
+            change.reg_type = 0; // GPR
+            change.reg_index = rd;
+            change.old_value = registers_->ReadGpr(rd);
+            change.new_value = value;
+            current_delta_.register_changes.push_back(change);
+        }
+        registers_->WriteGpr(rd, value);
+        emit gprUpdated(rd, value);
+        return;
+    }
+    else
+    {
         qDebug() << ">>> Standard float operation";
         value = execution_result_;
         qDebug() << "execution_result_:" << QString::number(value, 16);
@@ -866,7 +971,8 @@ void RVSSVM::WriteBackFloat()
     std::memcpy(&f_val, &float_bits, sizeof(float));
     qDebug() << "Value as float:" << f_val;
 
-    if (recording_enabled_) {
+    if (recording_enabled_)
+    {
         RegisterChange change;
         change.reg_type = 2;
         change.reg_index = rd;
@@ -883,7 +989,8 @@ void RVSSVM::WriteBackFloat()
 
 void RVSSVM::WriteBackDouble()
 {
-    if (registers_->GetIsa() != ISA::RV64) {
+    if (registers_->GetIsa() != ISA::RV64)
+    {
         return;
     }
 
@@ -895,7 +1002,8 @@ void RVSSVM::WriteBackDouble()
     qDebug() << "rd:" << rd << "Opcode:" << QString::number(opcode, 2).rightJustified(7, '0')
              << "Funct7:" << QString::number(funct7, 2).rightJustified(7, '0');
 
-    if (!control_unit_.GetRegWrite()) {
+    if (!control_unit_.GetRegWrite())
+    {
         qDebug() << "RegWrite not enabled, skipping";
         qDebug() << "=======================================\n";
         return;
@@ -903,7 +1011,8 @@ void RVSSVM::WriteBackDouble()
 
     uint64_t value;
 
-    if (opcode == 0b0000111) {
+    if (opcode == 0b0000111)
+    {
         qDebug() << ">>> FLD Writeback";
         value = memory_result_;
         qDebug() << "memory_result_:" << QString::number(value, 16);
@@ -912,12 +1021,35 @@ void RVSSVM::WriteBackDouble()
         std::memcpy(&d_val, &value, sizeof(double));
         qDebug() << "Value as double:" << d_val;
     }
-    else if (funct7 == 0b1100001) {
+    else if (funct7 == 0b1010001)
+    { // FEQ.D, FLT.D, FLE.D - Double Comparisons
+        qDebug() << ">>> Double Comparison - Writing boolean to GPR";
+        value = execution_result_; // Should be 0 or 1
+        qDebug() << "Comparison result:" << value;
+
+        if (recording_enabled_)
+        {
+            RegisterChange change;
+            change.reg_type = 0; // GPR
+            change.reg_index = rd;
+            change.old_value = registers_->ReadGpr(rd);
+            change.new_value = value;
+            current_delta_.register_changes.push_back(change);
+        }
+        registers_->WriteGpr(rd, value);
+        emit gprUpdated(rd, value);
+        qDebug() << "Written to GPR[" << rd << "]:" << value;
+        qDebug() << "=======================================\n";
+        return;
+    }
+    else if (funct7 == 0b1100001)
+    {
         qDebug() << ">>> FCVT.W.D/L.D - Writing to GPR";
         value = execution_result_;
         qDebug() << "Integer result:" << (int64_t)value;
 
-        if (recording_enabled_) {
+        if (recording_enabled_)
+        {
             RegisterChange change;
             change.reg_type = 0;
             change.reg_index = rd;
@@ -931,12 +1063,14 @@ void RVSSVM::WriteBackDouble()
         qDebug() << "=======================================\n";
         return;
     }
-    else if (funct7 == 0b1110001) {
+    else if (funct7 == 0b1110001)
+    {
         qDebug() << ">>> FMV.X.D - Writing to GPR";
         value = execution_result_;
         qDebug() << "Bit pattern:" << QString::number(value, 16);
 
-        if (recording_enabled_) {
+        if (recording_enabled_)
+        {
             RegisterChange change;
             change.reg_type = 0;
             change.reg_index = rd;
@@ -950,7 +1084,8 @@ void RVSSVM::WriteBackDouble()
         qDebug() << "=======================================\n";
         return;
     }
-    else {
+    else
+    {
         qDebug() << ">>> Standard double operation";
         value = execution_result_;
         qDebug() << "execution_result_:" << QString::number(value, 16);
@@ -960,7 +1095,8 @@ void RVSSVM::WriteBackDouble()
         qDebug() << "Value as double:" << d_val;
     }
 
-    if (recording_enabled_) {
+    if (recording_enabled_)
+    {
         RegisterChange change;
         change.reg_type = 2;
         change.reg_index = rd;
@@ -995,7 +1131,8 @@ void RVSSVM::WriteBackCsr()
     case 0b001: // CSRRW
         qDebug() << ">>> CSRRW";
         registers_->WriteGpr(rd, csr_old_value_);
-        if (recording_enabled_) {
+        if (recording_enabled_)
+        {
             RegisterChange change;
             change.reg_type = 1;
             change.reg_index = csr_addr;
@@ -1010,8 +1147,10 @@ void RVSSVM::WriteBackCsr()
     case 0b010: // CSRRS
         qDebug() << ">>> CSRRS";
         registers_->WriteGpr(rd, csr_old_value_);
-        if (csr_write_val_ != 0) {
-            if (recording_enabled_) {
+        if (csr_write_val_ != 0)
+        {
+            if (recording_enabled_)
+            {
                 RegisterChange change;
                 change.reg_type = 1;
                 change.reg_index = csr_addr;
@@ -1027,8 +1166,10 @@ void RVSSVM::WriteBackCsr()
     case 0b011: // CSRRC
         qDebug() << ">>> CSRRC";
         registers_->WriteGpr(rd, csr_old_value_);
-        if (csr_write_val_ != 0) {
-            if (recording_enabled_) {
+        if (csr_write_val_ != 0)
+        {
+            if (recording_enabled_)
+            {
                 RegisterChange change;
                 change.reg_type = 1;
                 change.reg_index = csr_addr;
@@ -1044,7 +1185,8 @@ void RVSSVM::WriteBackCsr()
     case 0b101: // CSRRWI
         qDebug() << ">>> CSRRWI";
         registers_->WriteGpr(rd, csr_old_value_);
-        if (recording_enabled_) {
+        if (recording_enabled_)
+        {
             RegisterChange change;
             change.reg_type = 1;
             change.reg_index = csr_addr;
@@ -1059,8 +1201,10 @@ void RVSSVM::WriteBackCsr()
     case 0b110: // CSRRSI
         qDebug() << ">>> CSRRSI";
         registers_->WriteGpr(rd, csr_old_value_);
-        if (csr_uimm_ != 0) {
-            if (recording_enabled_) {
+        if (csr_uimm_ != 0)
+        {
+            if (recording_enabled_)
+            {
                 RegisterChange change;
                 change.reg_type = 1;
                 change.reg_index = csr_addr;
@@ -1076,8 +1220,10 @@ void RVSSVM::WriteBackCsr()
     case 0b111: // CSRRCI
         qDebug() << ">>> CSRRCI";
         registers_->WriteGpr(rd, csr_old_value_);
-        if (csr_uimm_ != 0) {
-            if (recording_enabled_) {
+        if (csr_uimm_ != 0)
+        {
+            if (recording_enabled_)
+            {
                 RegisterChange change;
                 change.reg_type = 1;
                 change.reg_index = csr_addr;
@@ -1152,7 +1298,8 @@ void RVSSVM::Step()
     current_delta_.register_changes.clear();
     current_delta_.memory_changes.clear();
 
-    if (program_counter_ >= program_size_) {
+    if (program_counter_ >= program_size_)
+    {
         qDebug() << "PC beyond program size";
         return;
     }
@@ -1177,13 +1324,23 @@ void RVSSVM::Step()
     qDebug() << "  Reg changes:" << current_delta_.register_changes.size();
     qDebug() << "  Mem changes:" << current_delta_.memory_changes.size();
 
-    for (const auto &change : current_delta_.register_changes) {
+    for (const auto &change : current_delta_.register_changes)
+    {
         QString reg_type;
-        switch (change.reg_type) {
-        case 0: reg_type = "GPR"; break;
-        case 1: reg_type = "CSR"; break;
-        case 2: reg_type = "FPR"; break;
-        default: reg_type = "???"; break;
+        switch (change.reg_type)
+        {
+        case 0:
+            reg_type = "GPR";
+            break;
+        case 1:
+            reg_type = "CSR";
+            break;
+        case 2:
+            reg_type = "FPR";
+            break;
+        default:
+            reg_type = "???";
+            break;
         }
         qDebug() << "    " << reg_type << "[" << change.reg_index << "]:"
                  << QString::number(change.old_value, 16) << "->"
@@ -1204,7 +1361,8 @@ void RVSSVM::Undo()
 {
     qDebug() << "\n=== UNDO ===";
 
-    if (undo_stack_.empty()) {
+    if (undo_stack_.empty())
+    {
         qDebug() << "Undo stack empty";
         return;
     }
@@ -1234,12 +1392,15 @@ void RVSSVM::Undo()
             emit fprUpdated(change.reg_index, change.old_value);
 
             if (registers_->GetIsa() == ISA::RV32 ||
-                (change.old_value & 0xFFFFFFFF00000000ULL) == 0xFFFFFFFF00000000ULL) {
+                (change.old_value & 0xFFFFFFFF00000000ULL) == 0xFFFFFFFF00000000ULL)
+            {
                 uint32_t float_bits = change.old_value & 0xFFFFFFFF;
                 float f_val;
                 std::memcpy(&f_val, &float_bits, sizeof(float));
                 qDebug() << "  Restored FPR[" << change.reg_index << "] float:" << f_val;
-            } else {
+            }
+            else
+            {
                 double d_val;
                 std::memcpy(&d_val, &change.old_value, sizeof(double));
                 qDebug() << "  Restored FPR[" << change.reg_index << "] double:" << d_val;

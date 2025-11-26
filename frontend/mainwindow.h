@@ -7,6 +7,8 @@
 #include "../../backend/vm_asm_mw.h"
 #include <QSlider>
 #include <QLabel>
+#include <qplaintextedit.h>
+#include <qpushbutton.h>
 
 class QTabWidget;
 class QStackedWidget;
@@ -106,6 +108,7 @@ private slots:
     void onExecutionFinished(uint64_t instructions, uint64_t cycles);
     void onExecutionError(QString message);
     void onPeriodicUpdate();
+    void handleBreakpointToggled(int lineNumber);
 
     // void onRunSlow();
 };

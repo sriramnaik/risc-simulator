@@ -9,12 +9,10 @@
 #include <stdexcept>
 #include <vector>
 #include <map>
-// #include <iostream>
-// #include <algorithm>
+#include <QString>
+#include <iomanip>
+#include <sstream>
 
-// Assembler::Assembler(QObject* parent)
-//     : QObject(parent)
-// {}
 Assembler::Assembler(RegisterFile* regs,QObject* parent)
     : QObject(parent), registers_(regs) {}
 
@@ -124,7 +122,68 @@ AssembledProgram Assembler::assemble(const std::string &filename) {
 }
 
 
+QString Assembler::GenerateDisassemblyString(const AssembledProgram &program) {
+    const std::map<std::string, SymbolData>& symbol_table = program.symbol_table;
+    const std::vector<std::pair<ICUnit, bool>>& intermediate_code = program.intermediate_code;
+    const std::vector<uint32_t>& text_buffer = program.text_buffer;
 
+    std::unordered_map<uint64_t, std::string> label_for_address;
+    for (const auto& [name, data] : symbol_table) {
+        if (!data.isData) {
+            label_for_address[data.address] = name;
+        }
+    }
+    if (label_for_address.find(0) == label_for_address.end()) {
+        label_for_address[0] = "start";
+    }
 
+    unsigned int instruction_index = 0;
+    unsigned int line_number = 1;
+    size_t max_address = intermediate_code.size() * 4;
+    int hex_digits = 1;
+    size_t temp = max_address;
+    while (temp >>= 4) ++hex_digits;
+
+    std::stringstream out;
+
+    while (instruction_index < intermediate_code.size()) {
+        const auto& [ICBlock, isData] = intermediate_code[instruction_index];
+        uint64_t current_address = instruction_index * 4;
+
+        auto it = label_for_address.find(current_address);
+        if (it != label_for_address.end()) {
+            if (line_number > 1) {
+                out << std::endl;
+                ++line_number;
+            }
+            out << std::setw(16) << std::setfill('0') << std::hex
+                << current_address
+                << std::dec << std::setfill(' ')
+                << " <" << it->second << ">:" << std::endl;
+            ++line_number;
+        }
+
+        out << "  "
+            << std::setw(hex_digits) << std::setfill(' ') << std::right << std::hex
+            << current_address
+            << std::dec << std::left << std::setw(0)
+            << ": ";
+
+        if (instruction_index < text_buffer.size()) {
+            uint32_t raw = text_buffer[instruction_index];
+            out << std::setfill('0') << std::setw(8) << std::right << std::hex
+                << raw
+                << std::dec << std::setfill(' ') << "             ";
+        } else {
+            out << " ????????             ";
+        }
+
+        out << ICBlock << std::endl;
+        ++line_number;
+        ++instruction_index;
+    }
+
+    return QString::fromStdString(out.str());
+}
 
 

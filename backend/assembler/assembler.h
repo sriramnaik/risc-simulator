@@ -16,6 +16,7 @@ class Assembler : public QObject
 public:
     explicit Assembler(RegisterFile* regs, QObject* parent = nullptr);
     AssembledProgram assemble(const std::string &filename);
+    QString GenerateDisassemblyString(const AssembledProgram &program);
 
 
 private:

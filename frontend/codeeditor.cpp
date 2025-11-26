@@ -287,5 +287,3 @@ const QMap<int, QSet<QString> > &CodeEditor::getPipelineLabels()
 {
     return pipelineLabels;
 }
-
-
