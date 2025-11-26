@@ -108,7 +108,6 @@ private slots:
     void onExecutionFinished(uint64_t instructions, uint64_t cycles);
     void onExecutionError(QString message);
     void onPeriodicUpdate();
-    void handleBreakpointToggled(int lineNumber);
 
     // void onRunSlow();
 };
